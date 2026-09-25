@@ -1,4 +1,4 @@
-# smash-omop-export
+# omop-exporter
 
 Small, standalone tools for extracting SMASH OMOP history, landmark labels, sparse tabular views, and optional asset request lists. This repository contains no training code or patient-level results. Python dependencies are limited to PyYAML and psycopg. Outputs belong in a protected directory outside Git.
 
