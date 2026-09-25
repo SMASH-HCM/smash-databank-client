@@ -1,0 +1,24 @@
+dump: K:/SMASH_DATA/smash-etl/db_backups/latest.dump
+output_dir: K:/SMASH_DATA/model_exports/current
+hash_dump: false
+database:
+  host: localhost
+  docker_host: host.docker.internal
+  port: 5432
+  dbname: smash_cardiac
+  user: postgres
+  password_env: PGPASSWORD
+sidecars:
+  florence_clinical: K:/SMASH_DATA/smash-data-bank/curated/FLORENCE/Clinical
+  rennes_clinical: K:/SMASH_DATA/smash-data-bank/raw/RENNES/Clinical/rennes_hcm_clinical.csv
+  rennes_endpoints: K:/SMASH_DATA/smash-data-bank/raw/RENNES/Clinical/renne_hcm_endpoints.csv
+tabular:
+  filename: omop_tabular.csv
+  landmarks: true
+  sites: [FLORENCE, RENNES]
+  endpoints: [overall]
+  domains: [condition, measurement, observation, procedure, drug]
+  lookback_years: 5
+assets:
+  image_occurrences: null
+  data_root: K:/SMASH_DATA/raw
