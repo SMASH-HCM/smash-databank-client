@@ -63,13 +63,15 @@ def main():
         reason = ""
         if site == "TAMPERE":
             reason = "unsupported_endpoint"
+        elif source["label_reason"] in ("not_ascertained", "unsupported_endpoint"):
+            reason = source["label_reason"]
         elif source["cohort_status_conflict"] == "1":
             reason = "cohort_status_conflict"
         elif not anchor or not person["baseline_age_years"]:
             reason = "missing_anchor_or_age"
         elif source["label_reason"] == "positive_without_event_date":
             reason = "positive_without_event_date"
-        elif event and event <= anchor:
+        elif source.get("prevalent_at_baseline") == "1" or (event and event <= anchor):
             reason = "prevalent_or_same_day_event"
         elif event and (not censor or event > censor) and args.followup_gap_policy == "exclude":
             reason = "event_after_recorded_followup"

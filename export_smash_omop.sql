@@ -61,3 +61,14 @@ COPY (
     FROM cdm.drug_exposure
     ORDER BY person_id, event_date, domain, concept_id
 ) TO '/out/omop_events.csv' WITH (FORMAT CSV, HEADER TRUE);
+
+-- ETL v2.0 dated endpoint ledger and age/follow-up anchors. These replace the
+-- source-CSV label fallback for the current dump. Florence calendar dates use
+-- a synthetic birth anchor; patient age and elapsed intervals are meaningful.
+COPY (
+    SELECT * FROM results.smash_endpoint_censor ORDER BY person_id
+) TO '/out/smash_endpoint_censor.csv' WITH (FORMAT CSV, HEADER TRUE);
+
+COPY (
+    SELECT * FROM results.smash_endpoint_event ORDER BY person_id, endpoint
+) TO '/out/smash_endpoint_event.csv' WITH (FORMAT CSV, HEADER TRUE);

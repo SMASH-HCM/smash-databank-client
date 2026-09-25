@@ -16,6 +16,8 @@ import csv
 from collections import defaultdict
 from pathlib import Path
 
+AGE_EPSILON = 1e-6
+
 
 def rows(path):
     with path.open(newline="", encoding="utf-8-sig") as handle:
@@ -101,7 +103,7 @@ def main():
             grouped = defaultdict(list)
             for event in events[pid]:
                 age = float(event["patient_age_at_event_years"])
-                if age > landmark or (age == landmark and not args.include_landmark_day):
+                if age > landmark + AGE_EPSILON or (not args.include_landmark_day and age >= landmark - AGE_EPSILON):
                     break
                 if args.lookback_years is not None and age < landmark - args.lookback_years:
                     continue

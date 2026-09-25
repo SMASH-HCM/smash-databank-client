@@ -44,8 +44,9 @@ def restore(config):
         raise ValueError("Set the database password environment variable before restore")
     with psycopg.connect(**connection_args(config)) as con:
         with con.cursor() as cur:
-            for schema in ("cdm", "results", "smash_cdm"):
-                cur.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
+            cur.execute("SELECT count(*) FROM pg_tables WHERE schemaname NOT IN ('pg_catalog', 'information_schema')")
+            if cur.fetchone()[0]:
+                raise ValueError("Restore target is not empty; use a newly created database")
     command = ["docker", "run", "--rm", "--mount",
                f"type=bind,source={dump.parent},target=/dump,readonly", "-e", "PGPASSWORD",
                "postgres:14", "pg_restore", "--exit-on-error", "--no-owner", "--no-privileges",
@@ -61,8 +62,8 @@ def export(config):
     output = Path(config["output_dir"]).expanduser().resolve()
     output.mkdir(parents=True, exist_ok=True)
     statements = COPY_RE.findall((ROOT / "export_smash_omop.sql").read_text(encoding="utf-8"))
-    if len(statements) != 5:
-        raise ValueError("Expected five versioned COPY statements in export_smash_omop.sql")
+    if len(statements) != 7:
+        raise ValueError("Expected seven versioned COPY statements in export_smash_omop.sql")
     with psycopg.connect(**connection_args(config)) as con:
         with con.cursor() as cur:
             for query, filename in statements:
@@ -86,11 +87,14 @@ def export(config):
 
 
 def prepare(config):
-    raw = config["sidecars"]
     output = Path(config["output_dir"]).expanduser().resolve()
-    run_python("build_smash_experiment_data.py", "--export-dir", output,
-               "--florence-dir", raw["florence_clinical"], "--rennes-csv", raw["rennes_clinical"],
-               "--rennes-endpoints-csv", raw["rennes_endpoints"])
+    if (output / "smash_endpoint_censor.csv").is_file() and (output / "smash_endpoint_event.csv").is_file():
+        run_python("build_etl_release_data.py", "--export-dir", output)
+    else:
+        raw = config["sidecars"]
+        run_python("build_smash_experiment_data.py", "--export-dir", output,
+                   "--florence-dir", raw["florence_clinical"], "--rennes-csv", raw["rennes_clinical"],
+                   "--rennes-endpoints-csv", raw["rennes_endpoints"])
     run_python("build_rolling_landmarks.py", "--data-dir", output)
 
 
