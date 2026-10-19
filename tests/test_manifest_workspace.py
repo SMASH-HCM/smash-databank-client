@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from omop_exporter.manifest import select_files, validate_manifest
-from omop_exporter.nextcloud import NextcloudError
-from omop_exporter.settings import SMASH_URL
-from omop_exporter.workspace import Workspace
+from smash_hcm_databank_client.manifest import select_files, validate_manifest
+from smash_hcm_databank_client.nextcloud import NextcloudError
+from smash_hcm_databank_client.settings import SMASH_URL
+from smash_hcm_databank_client.workspace import Workspace
 
 
 def entry(path="README.md", payload=b"fixture", **tags):

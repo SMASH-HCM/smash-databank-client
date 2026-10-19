@@ -11,8 +11,8 @@ See [Export methodology](EXPORT_METHODOLOGY.md) for the event-stream, landmark-l
 1. Create an empty PostgreSQL database and set `PGPASSWORD` in your shell. Docker Desktop is required only for the optional `restore` command; it runs the PostgreSQL 14 client against the host database. The database must already exist and be reachable through `host.docker.internal` from Docker.
 2. Copy `config.postgres.example.yaml` to a local configuration file and set dump/connection/sidecar/output/asset paths. The default `config.example.yaml` is now for SQLite. Do not put a password in YAML.
 3. Install `python -m pip install '.[postgres]'` in a local virtual environment. The core `requirements.txt` intentionally omits PostgreSQL dependencies.
-4. Run `python main.py restore --config config.yaml` on an **empty** database if the dump has not yet been restored. This does not drop an existing database; a partially restored database requires operator review.
-5. Run `python main.py all --config config.yaml`. Alternatively run `export`, `prepare`, `tabular`, or `assets` separately. Run `python main.py --help` for commands.
+4. Run `python -m smash_hcm_databank_client.legacy.main restore --config config.yaml` on an **empty** database if the dump has not yet been restored. This does not drop an existing database; a partially restored database requires operator review.
+5. Run `python -m smash_hcm_databank_client.legacy.main all --config config.yaml`. Alternatively run `export`, `prepare`, `tabular`, or `assets` separately. Run `python -m smash_hcm_databank_client.legacy.main --help` for commands.
 
 `export` reads OMOP `cdm` and `results` tables into seven CSVs through PostgreSQL COPY. `prepare` creates a patient manifest, age-indexed stream, endpoint labels, and rolling landmarks. `tabular` makes a sparse landmark-concept view; site, cohort, domain, source, concept, and lookback filters can be set in YAML. `assets` makes requests for separately stored files when an image occurrence CSV is supplied. The dump path identifies the release and is used by `restore`; set `hash_dump: true` to record its SHA-256 during export.
 

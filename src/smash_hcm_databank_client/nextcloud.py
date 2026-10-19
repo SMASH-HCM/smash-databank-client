@@ -147,7 +147,7 @@ class NextcloudClient:
             raise NextcloudError("Refusing credentials to a different server")
         token = base64.b64encode((self.config.username + ":" + self.config.password).encode("utf-8")).decode("ascii")
         req = request.Request(url, data=data, method=method, headers={
-            "Authorization": "Basic " + token, "User-Agent": "omop-exporter-nextcloud/0.2", **(headers or {})})
+            "Authorization": "Basic " + token, "User-Agent": "smash-hcm-databank-client/0.12", **(headers or {})})
         try:
             return self.opener.open(req, timeout=self.timeout)
         except error.HTTPError as exc:

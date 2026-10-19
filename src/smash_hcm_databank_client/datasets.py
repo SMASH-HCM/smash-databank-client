@@ -7,7 +7,7 @@ import shutil
 import tempfile
 
 from .exports import export_events
-from .features import resolve_variables, selection_spec
+from .features import freeze_selection
 from .output import write_json
 from .tabular import export_wide
 
@@ -31,8 +31,7 @@ def export_dataset(database, data_dir, cohorts, variables="core", fmt="tabular",
     if not cohorts:
         raise ValueError("Select at least one cohort")
     # Resolve once to freeze the same source-variable schema across all splits.
-    _, families = selection_spec(variables)
-    selection = {"keys": resolve_variables(database, variables), "families": families}
+    selection = freeze_selection(database, variables)
     root = Path(data_dir).expanduser().resolve()
     root.mkdir(parents=True, exist_ok=True)
     plans, targets = [], set()

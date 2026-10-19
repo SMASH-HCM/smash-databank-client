@@ -10,8 +10,9 @@ import zipfile
 
 
 def main(repo, root, db):
-    folder = repo / "dist/binary/omop-exporter-0.10.0-windows-amd64"
-    exe = folder / "omop-exporter.exe"
+    from smash_hcm_databank_client import __version__
+    folder = repo / ("dist/binary/smash-hcm-databank-client-" + __version__ + "-windows-amd64")
+    exe = folder / "smash-hcm-databank-client.exe"
     archive = Path(str(folder) + ".zip")
     assert hashlib.sha256(archive.read_bytes()).hexdigest() == archive.with_suffix(".zip.sha256").read_text().split()[0]
     with zipfile.ZipFile(archive) as bundle:

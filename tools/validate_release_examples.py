@@ -13,15 +13,15 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from omop_exporter import __version__
-from omop_exporter.database import FACTS, OmopDatabase, quote, sha256
-from omop_exporter.exports import DOMAINS, FIELDS, export_events
-from omop_exporter.features import PRESETS, load_variable_set, resolve_variables, save_variable_set
-from omop_exporter.output import write_csv, write_json
-from omop_exporter.reports import REPORTS, write_report
-from omop_exporter.tabular import export_wide
-from omop_exporter.validation import validate_database
-from omop_exporter.availability import held_reason
+from smash_hcm_databank_client import __version__
+from smash_hcm_databank_client.database import FACTS, OmopDatabase, quote, sha256
+from smash_hcm_databank_client.exports import DOMAINS, FIELDS, export_events
+from smash_hcm_databank_client.features import PRESETS, load_variable_set, resolve_variables, save_variable_set
+from smash_hcm_databank_client.output import write_csv, write_json
+from smash_hcm_databank_client.reports import REPORTS, write_report
+from smash_hcm_databank_client.tabular import export_wide
+from smash_hcm_databank_client.validation import validate_database
+from smash_hcm_databank_client.availability import held_reason
 
 
 def announce(message):

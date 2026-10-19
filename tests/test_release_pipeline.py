@@ -21,9 +21,9 @@ def test_bad_candidate_identities_rejected(base, run, commit):
 
 
 def test_candidate_version_patches_only_matching_source_versions(tmp_path):
-    (tmp_path / "omop_exporter").mkdir()
+    (tmp_path / "src/smash_hcm_databank_client").mkdir(parents=True)
     project = tmp_path / "pyproject.toml"
-    module = tmp_path / "omop_exporter/__init__.py"
+    module = tmp_path / "src/smash_hcm_databank_client/__init__.py"
     project.write_text('version = "0.11.0"\n')
     module.write_text('__version__ = "0.10.0"\n')
     with pytest.raises(ValueError):

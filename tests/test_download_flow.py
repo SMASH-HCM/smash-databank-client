@@ -5,12 +5,12 @@ from os import terminal_size
 
 import pytest
 
-from omop_exporter.download_flow import download, folder
-from omop_exporter.manifest import artifact_type, select_downloads, validate_manifest
+from smash_hcm_databank_client.download_flow import download, folder
+from smash_hcm_databank_client.manifest import artifact_type, select_downloads, validate_manifest
 from menu_helpers import dispatch_menu as run_menu
-from omop_exporter.nextcloud import NextcloudError
-from omop_exporter.settings import SMASH_URL, terminal_logo
-from omop_exporter.workspace import Workspace, default_env_file, default_state_dir
+from smash_hcm_databank_client.nextcloud import NextcloudError
+from smash_hcm_databank_client.settings import SMASH_URL, terminal_logo
+from smash_hcm_databank_client.workspace import Workspace, default_env_file, default_state_dir
 
 
 def item(path, cohorts=(), modalities=(), **metadata):
@@ -230,7 +230,7 @@ def test_manifest_authentication_failure_is_not_mislabeled_missing(tmp_path, mon
 
 
 def test_frozen_profile_uses_home_independently_of_launch_directory(tmp_path, monkeypatch):
-    monkeypatch.setattr("omop_exporter.workspace.sys.frozen", True, raising=False)
+    monkeypatch.setattr("smash_hcm_databank_client.workspace.sys.frozen", True, raising=False)
     monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path / "user-home"))
     assert default_state_dir() == tmp_path / "user-home/.smash/omop-exporter"
     assert default_env_file() == default_state_dir() / ".env"
@@ -240,9 +240,9 @@ def test_frozen_profile_uses_home_independently_of_launch_directory(tmp_path, mo
 def test_new_logo_fits_regular_terminal_without_reusing_letter_fill(tmp_path, monkeypatch):
     # Match the real tuple contract; pytest also reads this shared module while
     # reporting the call result, before monkeypatch teardown has run.
-    monkeypatch.setattr("omop_exporter.settings.shutil.get_terminal_size", lambda fallback: terminal_size((80, 24)))
+    monkeypatch.setattr("smash_hcm_databank_client.settings.shutil.get_terminal_size", lambda fallback: terminal_size((80, 24)))
     logo = terminal_logo()
-    assert "SMASH-HCM DATABANK EXPORTER" in logo and "SMASHHCMSMASH" not in logo
+    assert "SMASH-HCM DATABANK CLIENT" in logo and "SMASHHCMSMASH" not in logo
     assert max(map(len, logo.splitlines())) <= 80
     assert len(logo.splitlines()) <= 24
 
@@ -253,7 +253,7 @@ def test_questionary_checkboxes_select_multiple_cohorts(monkeypatch):
     from prompt_toolkit.key_binding import KeyPress
     from prompt_toolkit.keys import Keys
     from prompt_toolkit.output import DummyOutput
-    from omop_exporter.menu_ui import checkbox
+    from smash_hcm_databank_client.menu_ui import checkbox
     original = questionary.checkbox
     def terminal(*args, **kwargs):
         question = original(*args, **kwargs, input=DummyInput(), output=DummyOutput())

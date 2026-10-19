@@ -4,7 +4,7 @@
 
 # Export methodology
 
-This document describes what `python main.py all --config config.yaml` writes and how to interpret the event-stream and tabular outputs. The CSVs are data contracts, not a fitted model or a clinical validation. Keep patient-level outputs outside Git in a protected directory.
+This document describes what `python -m smash_hcm_databank_client.legacy.main all --config config.yaml` writes and how to interpret the event-stream and tabular outputs. The CSVs are data contracts, not a fitted model or a clinical validation. Keep patient-level outputs outside Git in a protected directory.
 
 ## Release and source tables
 
@@ -32,7 +32,7 @@ The prediction boundary is a **consumer decision**: historically, events strictl
 
 ## Sparse tabular view
 
-`python main.py tabular --config config.yaml` calls `export_omop_tabular.py` using `age_omop_events.csv` and, by default, `landmarks.csv`. The output is **long/sparse**: one row per selected patient, landmark, domain, and concept **when at least one qualifying event exists**. It is not one wide row per patient. Config filters can select sites, splits, endpoint-specific landmarks, OMOP domains, concept IDs, cohort IDs, and a lookback period. `input_sources` requires a provenance-enriched stream and fails on the current export. With `tabular.landmarks: false`, the exporter instead uses one generic age anchor per selected patient, without endpoint labeling.
+`python -m smash_hcm_databank_client.legacy.main tabular --config config.yaml` calls `export_omop_tabular.py` using `age_omop_events.csv` and, by default, `landmarks.csv`. The output is **long/sparse**: one row per selected patient, landmark, domain, and concept **when at least one qualifying event exists**. It is not one wide row per patient. Config filters can select sites, splits, endpoint-specific landmarks, OMOP domains, concept IDs, cohort IDs, and a lookback period. `input_sources` requires a provenance-enriched stream and fails on the current export. With `tabular.landmarks: false`, the exporter instead uses one generic age anchor per selected patient, without endpoint labeling.
 
 For each `(patient, landmark, domain, concept)` group, the exporter computes:
 

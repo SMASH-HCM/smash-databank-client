@@ -1,100 +1,213 @@
 # SMASH-HCM Databank Client
 
-Canonical repository: **[SMASH-HCM/smash-hcm-databank-client](https://github.com/SMASH-HCM/smash-hcm-databank-client)**. Package/command names remain `omop-exporter`, the module remains `omop_exporter`, and existing local folders/profiles remain compatible. See the [documentation index](docs/README.md).
+Download SMASH-HCM research data, inspect a local OMOP database, and export reproducible datasets for modelling. Use the arrow-key menu for occasional work, or the command line for repeatable exports.
 
-SQLite-first tools for inspecting and exporting versioned SMASH OMOP databases. Clinical reports read the supplied `.db` directly, without a WP2 checkout, generated reports or source CSVs. The core package has no third-party runtime dependencies and does not require psycopg, PostgreSQL or Docker.
+**[Download the client](https://github.com/SMASH-HCM/smash-hcm-databank-client/releases)** · **[Request data access](https://forms.gle/nNDDBbX8ah15dNcs8)** · **[Documentation](docs/README.md)**
 
-Version **0.11** adds authenticated startup checks and an opt-in data-update flow, with automatic manifest refresh and archive/keep/replace choices. [Update behaviour](docs/UPDATES.md). Every successful push to `main` automatically produces a uniquely versioned **release candidate** after tests and native platform builds pass. Stable releases use a separate reviewed draft/tag workflow. [Release guide](docs/GITHUB_RELEASE.md).
+## What is the SMASH-HCM databank?
 
-## Install locally
+The databank brings together harmonized hypertrophic cardiomyopathy data from **FLORENCE, RENNES and TAMPERE**. A versioned **OMOP SQLite database** contains clinical records and, where supplied by the release, cohort memberships, baseline anchors, endpoints and links to external assets. Larger data such as ECG signals, MRI and Echo files are distributed separately, often as cohort/modality ZIPs. Raw and processed representations may both be published; availability depends on the release.
 
-Collaborators can download ZIPs or Python wheels from [Releases](https://github.com/SMASH-HCM/smash-hcm-databank-client/releases). Testing builds are labelled prerelease; stable builds are reviewed separately. Portable ZIPs include Python and menu/vault libraries. Extract the whole ZIP and run `omop-exporter.exe setup` on Windows or `./omop-exporter setup` on Mac/Linux. The database/assets remain separate downloads. Native Mac builds are unsigned/not notarized. Local builds remain under ignored `dist/binary`.
+**TODO: URL for the SMASH-HCM Databank paper.** No manuscript is bundled with the client yet. Cite the exact data release and client version used in an analysis alongside the paper when available.
 
-Python 3.9+ is supported. In PowerShell, from this checkout:
+The client connects to the [SMASH-HCM server](https://smash-hcm.ucd.ie); the shared Nextcloud folder is `databank`. Access requires an approved account. The client reads published files; data curation and ETL remain upstream responsibilities.
 
-```powershell
+## Get started
+
+### Portable application: no Python installation needed
+
+1. Open [Releases](https://github.com/SMASH-HCM/smash-hcm-databank-client/releases) and select a suitable version. **Prereleases are testing candidates**; prefer a stable release for routine work when one is available.
+2. Download the ZIP for your computer:
+
+   | Computer | Filename ending |
+   |---|---|
+   | Windows x64 | `windows-amd64.zip` |
+   | Mac, Apple Silicon | `macos-arm64.zip` |
+   | Mac, Intel | `macos-x86_64.zip` |
+   | Linux x64 | `linux-x86_64.zip` |
+
+3. Extract the **whole ZIP**. Keep the executable beside its `_internal` directory. Run `smash-hcm-databank-client.exe` on Windows; from a terminal on Mac/Linux run `./smash-hcm-databank-client`. Native Mac bundles are unsigned/not notarized; see [platform notes](docs/BINARY_RELEASES.md).
+4. Choose **Setup** to enter your Nextcloud username and app password. Prefer OS credential-vault storage when offered. Confirm a protected local download directory; the suggested home directory is only used after confirmation.
+5. Check the connection and retrieve the manifest. On later launches, authenticated startup checks offer **Check for data updates?** Choosing Yes refreshes the manifest and offers changes to tracked downloads. You review the files and choose archive, keep or replace before an update.
+6. Choose **Download**: the OMOP database, published tabular datasets, cohort/modality ZIPs, or selected manifest files/folders. Byte count, speed and ETA are displayed, and completed transfers are checked against manifest size and SHA-256.
+
+The menu groups work into **Setup → Download → Local OMOP → Validate**, with **Data Access Request** and **Exit** alongside them. Unavailable options explain their prerequisites. Local OMOP work is available once a readable SQLite database is downloaded or selected; it works offline without Nextcloud credentials. Use **Validate** to recheck downloaded files and their presence later.
+
+The server administrator must publish `manifest.json` before catalogue downloads work. Its entries describe paths, versions, checksums, sizes and cohort/modality tags. The client cannot offer files absent from that manifest. [Login, manifest and download details](docs/NEXTCLOUD.md) · [Update behaviour](docs/UPDATES.md).
+
+### Python installation: Windows, macOS or Linux
+
+Use Python 3.9+ in a virtual environment. Download the `.whl` from the same release, then install it with the menu and credential-vault extras. Replace `VERSION` with the downloaded filename's version:
+
+```sh
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -e ".[dev,secure,ui]"
-.\.venv\Scripts\omop-exporter.exe setup
+# Activate: Windows PowerShell: ./.venv/Scripts/Activate.ps1
+# Activate: macOS/Linux: source .venv/bin/activate
+python -m pip install "./smash_hcm_databank_client-VERSION-py3-none-any.whl[ui,secure]"
+smash-hcm-databank-client setup
 ```
 
-Use `pip install .` inside the local environment for the core client only. Metadata and extras are defined in `pyproject.toml`; `setup.py` is a compatibility entry. See [setup and optional dependencies](docs/SETUP.md) for Linux/macOS, configuration and wheel installation.
+You can also run `python -m smash_hcm_databank_client`. To install from a source checkout, use `python -m pip install ".[ui,secure]"`. Minimal scripted/local-database use requires no third-party runtime dependencies; PostgreSQL, psycopg and Docker are unnecessary. [Full installation guide](docs/SETUP.md).
 
-The [Questionary menu](docs/MENU.md) opens as **SMASH-HCM DATABANK EXPORTER**, with a boxed status panel and six sections: **Setup, Download, Local OMOP, Validate, Data Access Request, Exit**. Startup checks configured access and offers a data-update check; Yes automatically refreshes the manifest when needed. Download the database, published CSVs or cohort/modality ZIPs, or browse manifest files/folders. Review size/location and confirm before transferring. Local OMOP offers offline reports and configured exports once a readable database exists. Unavailable actions show their prerequisites. Run `omop-exporter` with no arguments, or `menu --plain`. Native vault storage is recommended; existing `.env` credentials remain compatible. The administrator must publish the actual databank manifest; `manifest.example.json` describes only the tested README.
+**Upgrading from omop-exporter:** in the same Python environment, uninstall the old distribution with `python -m pip uninstall omop-exporter` before installing the new wheel. The new distribution exposes only `smash-hcm-databank-client`. Existing download folders, saved profiles and credentials are retained. Application code now lives in `src/smash_hcm_databank_client/`. Replace old `python -m omop_exporter` invocations with `python -m smash_hcm_databank_client`; older feature-set identifiers still work.
 
-## Use a database
+## Inspect and report on the OMOP database
 
-```powershell
-$env:OMOP_EXPORTER_DB = 'K:\SMASH_DATA\smash-etl\releases\v1.4_rc3\SMASH_OMOP_v1.4_rc3.db'
-.\.venv\Scripts\omop-exporter.exe validate
-.\.venv\Scripts\omop-exporter.exe report inventory --out .local-reports\inventory
-.\.venv\Scripts\omop-exporter.exe report overlap --out .local-reports\overlap
-.\.venv\Scripts\omop-exporter.exe cohorts list
+All analysis reads the local `.db` directly, read-only. It does not need a WP2 report or checkout. The file must actually be **SQLite**: renaming a PostgreSQL dump to `.db` does not convert it. Database and asset versions are independent of the client version.
+
+Select a database under **Validate → Select a local OMOP database**, then open **Local OMOP**. For scripts, pass `--db` explicitly (or set `SMASH_DATABANK_DB`):
+
+```sh
+smash-hcm-databank-client validate --db ./data/OMOP.db
+smash-hcm-databank-client cohorts list --db ./data/OMOP.db
+smash-hcm-databank-client report inventory --db ./data/OMOP.db --data-dir ./analysis
+smash-hcm-databank-client report overlap --db ./data/OMOP.db --data-dir ./analysis
+smash-hcm-databank-client report patients --db ./data/OMOP.db --data-dir ./analysis
 ```
 
-Alternatively pass `--db <path>` or `--config config.json` to each command. `config.example.json` is dependency-free; optional YAML uses the `config` extra. Every output directory must be new. Databases are opened read-only.
+Available reports: **inventory, cohorts, endpoints, overlap, distributions, features and patients**. They cover tables/columns, site and cohort counts, exact three-site/two-site variable overlap, numeric summaries separated by concept/unit/site, feature lists, and one-row-per-person summaries. Patient summaries include observation bounds, visits, logged asset counts, baseline and endpoint information where available. Missing ledgers are reported explicitly; catalogue counts are not proof that files exist. Reports are written under `analysis/reports/`. Distribution tables are implemented; automatic per-variable plots remain planned.
 
-Implemented commands:
+## Export a standard tabular dataset
 
-| Command | Output |
-| --- | --- |
-| `validate` | SQLite integrity, schema/capabilities, person links, source SHA-256, optional trusted-hash comparison, optional embedded-catalog asset byte validation |
-| `report inventory` | JSON/CSV table/column inventory, site/cohort population counts, observed variables and fact/patient coverage |
-| `report overlap` | JSON and separate `core.csv` / `two_site.csv`, with exclusive site-pair counts and coverage |
-| `cohorts list` | Canonical database cohort IDs/names; no silent PILOT-to-TEST aliases |
-| `export --format events` | Deterministic full-history event CSV, optional cohort/variable filter and reproducibility manifest |
-| `export --format tabular` | Feature-only baseline table from embedded cohorts/anchors, with variable dictionary, provenance and reproducibility manifest |
-| `setup` / `menu` | Interactive SMASH login, manifest/cache downloads, integrity checks and local exports |
-| `nextcloud check/list/download` | Read-only HTTPS WebDAV using the saved setup profile or an explicit `.env`, with a checksum receipt |
+The default is deliberately simple: **one row per patient at the recorded baseline date, one column per selected clinical feature**, plus `person_id`, `site`, `cohort` and `snapshot_date`. Values must be eligible on that day. There is no implicit averaging, historical carry-forward, scaling, log transform, imputation or random splitting.
 
-Example patient-level export to a protected location outside Git:
+Use **Local OMOP → Export** to select cohort(s), variables, format and configuration. The database supplies memberships and anchors. SHaRe source labels are presented as **FLORENCE**. TRAIN/TRAINING produces `train.csv`, TEST/PILOT produces `test.csv`, EVAL/EVALUATION produces `evaluation.csv`, and ALL produces `all.csv`; the original cohort ID/name stays in provenance. Cohorts remain distinct.
+
+For command-line examples below, first use `cohorts list` and substitute the exact names or numeric IDs in your release. These examples assume it contains `Rennes Training` and `Rennes Test`:
+
+```sh
+smash-hcm-databank-client export --db ./data/OMOP.db --format tabular --cohort "Rennes Training" --vars shared-clinical --data-dir ./analysis/core
+smash-hcm-databank-client export --db ./data/OMOP.db --format tabular --cohort "Rennes Test" --variables-file ./analysis/core/RENNES/train/variable_set.json --data-dir ./analysis/core
+```
 
 ```text
-omop-exporter export --db /protected/omop.db --format events --cohort <canonical-name-or-id> --out /protected/exports/events
+analysis/core/
+  RENNES/
+    train.csv
+    test.csv
+    train/    # frozen variables, dictionary, provenance, QC and dataset manifest
+    test/
 ```
 
-The event stream includes post-baseline history; consumers must enforce prediction availability boundaries. Reports describe observed full-history overlap, not proven clinical equivalence. Unsupported study components are explicit. For strict checks, add `validate --require-capability cohorts --require-capability baseline_anchors`; trusted checksum comparison uses `--sha256`.
+Reuse the **training variable list** for test/export runs to preserve columns and order. In a menu batch the schema is frozen across all selected cohorts. Use a new output root for a different configuration; existing datasets are never silently overwritten. Low-level `--out ./new-bundle` instead writes `data.csv` inside a single bundle.
 
-The available RC3 file is a partial clinical candidate: it can be inspected/reported but contains no cohort or endpoint/censor ledgers. This does not describe the scope of the forthcoming full v1.4 database. The current package calculates 31 exact three-site and 36 exclusive two-site candidates from this RC3, and does not hardcode those counts for other releases.
+A shortened, fictional example (two selected measurements) looks like:
 
-## Tests and implementation scope
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest tests -m "not integration"
-.\.venv\Scripts\python.exe -m pytest tests --omop-db 'K:\SMASH_DATA\smash-etl\releases\v1.4_rc1\SMASH_OMOP_v1.4_rc1.db'
-.\.venv\Scripts\python.exe -m build
+```csv
+person_id,site,cohort,snapshot_date,measurement__4152194,measurement__4108582
+101,RENNES,Rennes Training,2020-01-01,120.0,62.0
+102,RENNES,Rennes Training,2020-02-01,,58.0
 ```
 
-See [test fixtures and verification](docs/TESTING.md) and [database contracts](docs/DATABASE_CONTRACT.md). CI covers Windows/Linux/macOS and Python 3.9/3.12, including installed-wheel checks outside the checkout. Main candidates add native Windows, Linux, Apple Silicon and Intel Mac package builds. [Source checkout](https://github.com/SMASH-HCM/smash-hcm-databank-client).
+`variables.csv` maps columns to names, source tables, concepts and units. Blank cells mean unavailable, withheld or conflicting evidence; they are not assumed normal/zero. Inspect `feature_provenance.csv` and QC counts to distinguish those cases. Labels/targets are **not** included: endpoints need a separately reviewed horizon, censoring and eligibility policy before supervised training.
 
-Baseline tabular exports and manifest-driven batch downloads are implemented and tested with synthetic complete releases. The RC snapshots are tested read-only. Distribution plots, annual/endpoint exports, multimodal copying/format validation, and retry/resume remain forthcoming. The three original baseline contract tests now pass as ordinary tests. See [Nextcloud setup and the live README test](docs/NEXTCLOUD.md), [baseline rules and menu limits](docs/MENU.md), and the [status review and implementation plan](docs/STATUS_AND_IMPLEMENTATION_PLAN.md).
+## Choose clinical features
 
-## Optional legacy PostgreSQL adapter
+Friendly menu names and their CLI identifiers are:
 
-Only install `.[postgres]` in a local environment when working with historical PostgreSQL dumps. It supplies PyYAML and psycopg for `omop-exporter-legacy`. The core SQLite command never imports them. The top-level scripts remain installable for compatibility, including sparse tabular and landmark preparation; the known mixed/unknown-unit mean defect in the sparse exporter is fixed.
+| Feature set | `--vars` | What it selects |
+|---|---|---|
+| Shared clinical features — all 3 sites (CORE) | `shared-clinical` | Exact table/concept pairs observed at all three sites |
+| Shared clinical features — at least 2 sites | `shared-extended` | CORE plus exclusive two-site concepts |
+| Shared clinical measurements — all 3 sites | `shared-measurements` | Measurement-domain subset of CORE |
+| Starter measurements — 8 fixed concepts | `starter-measurements` | Height, weight, BMI, systolic/diastolic BP, LVEF, septal thickness, LVOT gradient |
+| ESC Risk-SCD clinical inputs | `esc-risk` | Relevant source concepts plus baseline age; see the definition below |
+| ECG measurements | `ecg-measurements` | Name-filtered ECG concepts; does not extract signals from NPZ files |
+| All clinical measurements | `all-measurements` | All recorded measurement concepts |
+| Recorded diagnoses and conditions | `diagnoses` | Condition-domain concepts |
+| All recorded clinical features | `all-clinical` | All observed clinical table/concept pairs, excluding management concepts |
+| Clinical features shared by exactly 2 sites | `two-site-only` | Exclusive two-site concepts |
+| Shared clinical features — grouped mitral regurgitation | `shared-grouped` | CORE with an explicit categorical MR-grade family |
 
-Use an explicitly supplied `config.postgres.example.yaml` copy with the legacy command. The [previous workflow](docs/LEGACY_POSTGRES_WORKFLOW.md) and [export methodology](docs/EXPORT_METHODOLOGY.md) are retained as historical contracts. Their source-sidecar fallback and PostgreSQL restore requirements do not apply to the new SQLite client.
+Counts depend on the database release: **CORE is not hard-coded to 36 features**. Structural overlap does not prove equal units, acquisition context or prediction-time availability. The grouped set addresses one known category-family issue: mild/moderate/severe MR can be different source concepts despite belonging to one clinical variable. It preserves unknowns and conflicts; other families are not inferred automatically. Run `report features` for exact IDs and `report overlap` for site coverage. Old identifiers such as `core`, `core-measurements` and `ecg-derived` still work in scripts. [Full feature definitions and mappings](docs/DATASET_EXPORTS.md).
 
-This repository contains no training code or real patient-level outputs. Keep databases, credentials, raw images/signals and generated datasets in protected storage outside Git. Dated audits and the implementation history below describe earlier snapshots; current release and usage policy is in the linked guides. In particular, the [19 October RC4 format notice](docs/RC4_FORMAT_CHANGE_2026-10-19.md) describes a PostgreSQL dump now at the former SQLite path.
+**ESC Risk-SCD inputs:** the clinical model uses age, maximum LV wall thickness, left atrial diameter, maximum rest/Valsalva LVOT gradient, family history of SCD, NSVT and unexplained syncope. [ESC definitions](https://www.escardio.org/static-file/Escardio/Guidelines/publications/HCMESC%20HCM-Web%20addenda.pdf). The new `esc-risk` set exports seven candidate source concepts (resting and provoked gradients kept separate) plus `baseline_age_years`. This is an **input-review dataset, not a calculated or clinically validated risk score**. Generic syncope is not automatically unexplained syncope, segmental thickness is not proven maximal thickness, and acquisition/history definitions need review. Missing evidence stays missing; same-day unclassified conditions can be withheld by the standard mask. Previously calculated risk scores and ICD recommendations are excluded from this set. [Exact mappings and limitations](docs/DATASET_EXPORTS.md#esc-risk-scd-clinical-inputs).
 
-## Local database tools and portable application (0.7)
+### Define your own variables
 
-Portable builds now use a ZIP containing the executable and its `_internal` runtime folder; extract both together. Python and the required libraries are included. One-file packaging has been removed following Defender detections of the historical 0.5.0 build; see [the detection and review guidance](docs/BINARY_RELEASES.md#defender-detection-of-the-historical-050-one-file-build).
+In the menu choose **Choose variables from the database list**, search/select concepts, and save the list for reuse. Alternatively create a JSON file using explicit table/concept pairs:
 
-The menu header has green/red availability indicators and a three-second startup HTTPS reachability check. Server reachability and authenticated databank access are labelled separately. See [menu status meanings](docs/MENU.md).
+```json
+{
+  "schema_version": 1,
+  "name": "Blood pressure and LVEF",
+  "variables": [
+    {"table": "measurement", "concept_id": 4152194},
+    {"table": "measurement", "concept_id": 4154790},
+    {"table": "measurement", "concept_id": 4108582}
+  ]
+}
+```
 
+```sh
+smash-hcm-databank-client export --db ./data/OMOP.db --format tabular --cohort "Rennes Training" --variables-file ./my-variables.json --data-dir ./analysis/custom
+```
 
-**Local OMOP** now offers cohort/endpoint/inventory/overlap/distribution reports, cohort-based tabular/event exports, predefined feature sets and saved custom concept lists. It is enabled only with a readable local OMOP database. Confirmed download directories persist and are created when needed. Manifest, database and asset downloads have byte/percentage/speed/ETA progress; the manifest path is predefined. See [the local OMOP guide](docs/LOCAL_OMOP.md).
+That produces **3 clinical columns + 4 metadata columns**. Requested concepts absent from this release stay as blank columns. Use the menu catalogue/feature reports to verify concept meaning and units; table identity matters as well as concept ID. [Copyable five-measurement example with optional baseline age](examples/clinical_variables.json) · [Tabular train/test tutorial](docs/TABULAR_TUTORIAL.md).
 
-## RC4 validation and baseline policy (0.8)
+### Optional history and additional features
 
-The full ETL SQLite schema is supported, including results/CDM collision names and embedded export metadata. Vocabulary names are resolved sparsely. The tabular default now implements eligible baseline-day measurements with an explicit conservative post-assessment/pre-intervention mask; same-day treatment/unknown-role records and administrative/outcome-derived observations are held out and audited. Strict-before controls remain available. See [the baseline availability policy](docs/BASELINE_AVAILABILITY.md). Missing baselines still block a selected cohort rather than silently dropping people.
+| Option | Meaning | Status |
+|---|---|---|
+| Exact baseline day | Use that day's eligible facts only | Default |
+| Two-year lookback | Latest eligible value within an explicit 730-day window ending at baseline | Opt-in; 730 days is an approximation to two calendar years |
+| Previous value / recency | Previous distinct observation date; days from previous/latest observation to baseline | Opt-in extra columns |
+| Count / mean / min / max | Summaries across eligible, QC-valid observed dates in the window | Opt-in extra columns |
+| Log / log-normal | A log transform can reduce positive skew; a log-normal distribution describes values whose logarithms are normally distributed | Downstream modelling; no client option |
+| Normalization / imputation | Scaling values or filling missing entries | Downstream modelling; no client option |
 
-## Exact-day tabular default (0.9)
+```sh
+smash-hcm-databank-client export --db ./data/OMOP.db --format tabular --cohort "Rennes Training" --vars shared-measurements --tabular-mode latest-history --lookback-days 730 --history-features previous-value previous-age-days last-age-days count mean --data-dir ./analysis/history-730
+```
 
-The default is now a standard patient/day table: `person_id, site, cohort, snapshot_date` plus one column per selected feature, with no averaging, sliding-window features or implicit carry-forward. RC4 CORE currently has 37 features and therefore 41 total CSV columns. FLORENCE is used for exported site/cohort labels; original SHaRe names remain in provenance. Historical/as-of selection requires explicit `--tabular-mode latest-history --lookback-days <N>`. See [the baseline/snapshot contract](docs/BASELINE_AVAILABILITY.md).
+No extra is automatically applied. History adds columns and changes the question being modelled; a 730-day lookback does **not** move baseline, define a two-year outcome horizon or establish continuous observation. Numeric summaries do not average category IDs or incompatible/unknown units. Fit any downstream transform using training data only, then apply the same transform to test data. [Concise options and modelling example](docs/TABULAR_TUTORIAL.md).
 
-## Dataset configuration and standard output layout (0.10)
+## Export an event stream
 
-Version 0.10 adds menu configuration for cohort/feature selection, exact-day versus explicit history, optional history columns and event-stream filters. Use `--data-dir` for `DATA_DIR/<group>/train.csv,test.csv`, `DATA_DIR/event_stream/<cohort>/`, and `DATA_DIR/reports/`. Existing explicit `--out` bundles remain supported. [Dataset export guide](docs/DATASET_EXPORTS.md) describes every option, feature set, category-family mapping, patient summary and baseline caveat.
+An event stream keeps dated clinical facts as rows rather than pivoting them into patient columns. Default fields are:
+
+```text
+person_id, domain, concept_id, event_date,
+value_as_number, value_as_concept_id, unit_concept_id
+```
+
+Example: one patient may have many measurement, observation and condition rows on multiple dates. Rows are ordered deterministically by person/date/domain/concept/fact ID. No resampling or averaging is performed. Optional metadata supplies source text, fact ID/table, site and baseline-relative timing.
+
+```sh
+smash-hcm-databank-client export --db ./data/OMOP.db --format events --cohort "Rennes Test" --vars all-clinical --data-dir ./analysis/events-full
+smash-hcm-databank-client export --db ./data/OMOP.db --format events --cohort "Rennes Test" --vars shared-clinical --event-scope baseline --event-lookback-days 730 --domains measurement observation --include-event-metadata --data-dir ./analysis/events-baseline
+```
+
+Files go under `DATA_DIR/event_stream/<COHORT>/omop_events.csv` with a reproducibility manifest. Full-history mode is descriptive and **includes post-baseline facts**. Baseline scope applies the clinical anchor and conservative availability mask. Use it for baseline prediction experiments; still review source-specific leakage and task eligibility.
+
+For sequence models, build the vocabulary/encoding on training data, respect patient splits, distinguish numeric/coded/presence events, check units, and handle variable-length histories and padding explicitly. Date-only records do not establish within-day clinical order. More events can reflect longer follow-up or site recording practices, rather than worse disease. The stream does not generate labels, endpoint risk sets, missing visits or waveform tokens. [Event configuration and caveats](docs/DATASET_EXPORTS.md#event-stream-configuration).
+
+## Combine ECG/MRI/Echo ZIPs with clinical data
+
+Download the same release's cohort ZIPs and export the matching tabular cohorts. Extract to protected storage, then link assets using an authoritative **OMOP person-ID + asset-path + acquisition-date index** from the release. Never infer patient identity from a filename or row order. Keep each patient's assets in the same train/test split, and exclude assets acquired after the prediction boundary.
+
+The [ECG + tabular tutorial](docs/MULTIMODAL_TUTORIAL.md) walks through downloading, guarded ZIP extraction, defining the required asset index, and producing train/test CSVs with ECG paths. A tested [preparation helper](examples/prepare_multimodal.py) creates these path-linked datasets without copying waveforms into clinical cells. It requires an explicit index and eligibility review; it cannot manufacture missing linkage from the current catalogue. The same approach can link NIfTI or curated Echo files. Automatic extraction/linkage and modality-specific model training are not menu features yet.
+
+## Baselines, indices and landmarks
+
+The standard export uses one fixed **clinical baseline index** per patient from the database anchor ledger. A history window changes which earlier observations can contribute; it does not move the prediction date. Repeated annual training landmarks and endpoint-specific outcome horizons are separate study designs, retained only in the legacy experiment tools. [Indexing and landmarking explained with examples](docs/INDEXING_AND_LANDMARKS.md).
+
+## Prediction rules and current limits
+
+Baseline prediction is **after diagnostic assessment and before new treatment decisions**. Eligible baseline-day measurements can be included; new same-day treatment decisions and outcome/administrative facts are held out. The current role mask is conservative and incomplete because date-only OMOP records do not fully describe intraday availability. Missing/invalid cohort anchors block baseline exports rather than silently dropping patients. Review the output audit files. [Baseline policy](docs/BASELINE_AVAILABILITY.md).
+
+The client validates file bytes and technical database capabilities, not clinical completeness or model validity. Some historical release candidates lack ledgers or have known anchor/data issues; inspect the release-specific reports and [dated validation notices](docs/README.md). Retries/resume, automatic waveform/imaging validation, endpoint-specific labels and annual training indices remain outside the standard client workflow.
+
+Keep credentials, clinical files, exports and patient-level reports in approved protected storage outside Git. Sharing a client executable does not confer databank access.
+
+## Development and releases
+
+```sh
+python -m pip install -e ".[dev,ui,secure]"
+python -m pytest tests -m "not integration"
+python -m build
+```
+
+Source code is under `src/smash_hcm_databank_client/`; older PostgreSQL/CSV preparation scripts are in its `legacy/` subpackage. Release/developer utilities live in `tools/`, and collaborator examples in `examples/`.
+
+Unit/workflow tests use temporary synthetic SQLite databases and mocked network responses; no developer-specific drive paths or real credentials are needed. External read-only database checks are optional: `python -m pytest tests -m integration --omop-db ./private/OMOP.db`. Every successful main push publishes a distinct release candidate after tests/native builds; stable releases are reviewed separately. [Tests](docs/TESTING.md) · [Release guide](docs/GITHUB_RELEASE.md) · [All documentation](docs/README.md).

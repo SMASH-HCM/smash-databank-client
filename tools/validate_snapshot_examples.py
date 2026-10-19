@@ -7,12 +7,12 @@ from pathlib import Path
 import re
 
 from validate_release_examples import announce, verify_bundle
-from omop_exporter import __version__
-from omop_exporter.database import OmopDatabase, sha256
-from omop_exporter.features import load_variable_set
-from omop_exporter.output import write_csv, write_json
-from omop_exporter.reports import write_report
-from omop_exporter.tabular import export_wide
+from smash_hcm_databank_client import __version__
+from smash_hcm_databank_client.database import OmopDatabase, sha256
+from smash_hcm_databank_client.features import load_variable_set
+from smash_hcm_databank_client.output import write_csv, write_json
+from smash_hcm_databank_client.reports import write_report
+from smash_hcm_databank_client.tabular import export_wide
 
 
 def label(value):
@@ -106,8 +106,8 @@ def main():
                 '## Explicit opt-in history','',
                 'Historical/as-of selection requires both --tabular-mode latest-history and a positive --lookback-days. [The 365-day Tampere example](history-examples/tampere-training-core-365d/data.csv) demonstrates that opt-in. Historical controls from the earlier run are retained under exports/ and indexed in examples.json; they are not the current default. Rolling/annual training landmarks and shifted prediction indexes remain a separate, explicitly configured risk-set workflow, not automatic snapshot features.','',
                 '```powershell',
-                '.\\omop-exporter.exe export --db K:/SMASH_DATA/smash-data-bank/SMASH_v1.4_rc4.db --format tabular --cohort "Rennes Training" --vars core --out <new-snapshot-directory>',
-                '.\\omop-exporter.exe export --db K:/SMASH_DATA/smash-data-bank/SMASH_v1.4_rc4.db --format tabular --cohort "Tampere Training" --vars core --tabular-mode latest-history --lookback-days 365 --out <new-history-directory>',
+                'smash-hcm-databank-client export --db ./private/OMOP.db --format tabular --cohort "Rennes Training" --vars core --out <new-snapshot-directory>',
+                'smash-hcm-databank-client export --db ./private/OMOP.db --format tabular --cohort "Tampere Training" --vars core --tabular-mode latest-history --lookback-days 365 --out <new-history-directory>',
                 '```','',
                 '## Findings requiring review','',
                 '- 151 people have missing baseline dates/ages, all FLORENCE. There are 2,984 person rows but 2,978 SMASH All Patients cohort members; six people have no assignment to that cohort.',

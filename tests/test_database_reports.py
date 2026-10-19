@@ -3,9 +3,9 @@ import sqlite3
 
 import pytest
 
-from omop_exporter.database import OmopDatabase, sha256
-from omop_exporter.reports import inventory, overlap
-from omop_exporter.validation import validate_database
+from smash_hcm_databank_client.database import OmopDatabase, sha256
+from smash_hcm_databank_client.reports import inventory, overlap
+from smash_hcm_databank_client.validation import validate_database
 
 
 def test_missing_database_is_not_created(tmp_path):

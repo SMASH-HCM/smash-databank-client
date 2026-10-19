@@ -4,17 +4,17 @@ from pathlib import Path
 
 import pytest
 
-from omop_exporter.database import OmopDatabase
+from smash_hcm_databank_client.database import OmopDatabase
 
 
 @pytest.fixture(autouse=True)
 def offline_menu_startup(monkeypatch):
     # Unit/workflow tests never contact the real server. Probe tests inject their
     # own opener into connectivity.probe_server and exercise the actual logic.
-    monkeypatch.setattr("omop_exporter.menu.probe_server", lambda: {"available": False, "detail": "Offline test"})
+    monkeypatch.setattr("smash_hcm_databank_client.menu.probe_server", lambda: {"available": False, "detail": "Offline test"})
     # Existing workflow cases exercise individual menu actions. Startup update
     # networking/prompts are covered explicitly in test_updates.py.
-    monkeypatch.setattr("omop_exporter.menu.startup_updates", lambda *args, **kwargs: None)
+    monkeypatch.setattr("smash_hcm_databank_client.menu.startup_updates", lambda *args, **kwargs: None)
 
 
 def pytest_addoption(parser):

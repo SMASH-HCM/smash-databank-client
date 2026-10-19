@@ -3,8 +3,8 @@ requires = ["setuptools>=68,<81", "wheel>=0.41"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "omop-exporter"
-version = "0.11.0"
+name = "smash-hcm-databank-client"
+version = "0.12.0"
 description = "SMASH-HCM Databank Client: downloads, SQLite inspection and reproducible cohort exports"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -24,17 +24,17 @@ postgres = ["PyYAML>=6,<7", "psycopg[binary]>=3.1,<4"]
 dev = ["pytest>=7.4,<9", "build>=1.2,<2"]
 
 [project.scripts]
-omop-exporter = "omop_exporter.cli:main"
-omop-exporter-legacy = "main:main"
+smash-hcm-databank-client = "smash_hcm_databank_client.cli:main"
 
 [tool.setuptools]
-py-modules = ["main", "export_omop_tabular", "build_etl_release_data", "build_rolling_landmarks", "build_smash_experiment_data", "build_asset_request_manifest", "build_harmonized_echo_table"]
+package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
-include = ["omop_exporter*"]
+where = ["src"]
+include = ["smash_hcm_databank_client*"]
 
 [tool.setuptools.package-data]
-omop_exporter = ["resources/*.sql", "resources/*.yaml", "resources/*.txt"]
+smash_hcm_databank_client = ["resources/*.sql", "resources/*.yaml", "resources/*.txt", "legacy/*.sql"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

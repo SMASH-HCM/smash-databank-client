@@ -18,12 +18,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def build(output):
-    source = (ROOT / "omop_exporter/__init__.py").read_text(encoding="utf-8")
+    source = (ROOT / "src/smash_hcm_databank_client/__init__.py").read_text(encoding="utf-8")
     version = re.search(r'__version__ = "(\d+\.\d+\.\d+(?:rc[1-9]\d*)?)"', source).group(1)
     output = Path(output).expanduser().resolve()
     output.mkdir(parents=True, exist_ok=True)
     platform_name = {"Darwin": "macos"}.get(platform.system(), platform.system().lower())
-    name = "omop-exporter-" + version + "-" + platform_name + "-" + platform.machine().lower()
+    name = "smash-hcm-databank-client-" + version + "-" + platform_name + "-" + platform.machine().lower()
     release = output / name
     archive = output / (name + ".zip")
     if release.exists() or archive.exists():
@@ -31,21 +31,25 @@ def build(output):
     work = ROOT / "build" / ("binary-" + uuid.uuid4().hex)
     work.mkdir(parents=True)
     env = dict(os.environ, PYINSTALLER_CONFIG_DIR=str(ROOT / "build/pyinstaller-cache"))
-    command = [sys.executable, "-m", "PyInstaller", "--console", "--noupx", "--name", "omop-exporter",
+    command = [sys.executable, "-m", "PyInstaller", "--console", "--noupx", "--name", "smash-hcm-databank-client",
                "--onedir", "--distpath", str(work / "dist"), "--workpath", str(work / "work"),
-               "--specpath", str(work), "--paths", str(ROOT), "--hidden-import", "keyring", "--hidden-import", "yaml",
-               "--collect-data", "omop_exporter", "--exclude-module", "psycopg", "--exclude-module", "pandas",
+               "--specpath", str(work), "--paths", str(ROOT / "src"), "--hidden-import", "keyring", "--hidden-import", "yaml",
+               "--collect-data", "smash_hcm_databank_client", "--exclude-module", "psycopg", "--exclude-module", "pandas",
                "--exclude-module", "numpy", "--exclude-module", "tkinter", str(ROOT / "tools/binary_entry.py")]
     subprocess.run(command, cwd=ROOT, env=env, check=True)
-    executable = "omop-exporter.exe" if sys.platform == "win32" else "omop-exporter"
-    shutil.copytree(work / "dist/omop-exporter", release)
+    executable = "smash-hcm-databank-client.exe" if sys.platform == "win32" else "smash-hcm-databank-client"
+    shutil.copytree(work / "dist/smash-hcm-databank-client", release)
     # Explicit public allowlist: never collect the checkout, .env or local state.
     for filename in ("README.md", "manifest.example.json"):
         shutil.copy2(ROOT / filename, release / filename)
-    for filename in ("README.md", "MENU.md", "NEXTCLOUD.md", "BINARY_RELEASES.md", "LOCAL_OMOP.md", "BASELINE_AVAILABILITY.md", "DATABASE_CONTRACT.md", "DATASET_EXPORTS.md", "UPDATES.md", "SETUP.md", "GITHUB_RELEASE.md", "TESTING.md", "STATUS_AND_IMPLEMENTATION_PLAN.md", "LEGACY_POSTGRES_WORKFLOW.md", "EXPORT_METHODOLOGY.md", "RC4_VALIDATION_2026-10-18.md", "RC4_DATABASE_AGENT_FEEDBACK_2026-10-18.md", "RC4_FORMAT_CHANGE_2026-10-19.md"):
+    for filename in ("README.md", "MENU.md", "NEXTCLOUD.md", "BINARY_RELEASES.md", "LOCAL_OMOP.md", "BASELINE_AVAILABILITY.md", "DATABASE_CONTRACT.md", "DATASET_EXPORTS.md", "TABULAR_TUTORIAL.md", "MULTIMODAL_TUTORIAL.md", "INDEXING_AND_LANDMARKS.md", "UPDATES.md", "SETUP.md", "GITHUB_RELEASE.md", "TESTING.md", "STATUS_AND_IMPLEMENTATION_PLAN.md", "LEGACY_POSTGRES_WORKFLOW.md", "EXPORT_METHODOLOGY.md", "RC4_VALIDATION_2026-10-18.md", "RC4_DATABASE_AGENT_FEEDBACK_2026-10-18.md", "RC4_FORMAT_CHANGE_2026-10-19.md"):
         destination = release / "docs" / filename
         destination.parent.mkdir(exist_ok=True)
         shutil.copy2(ROOT / "docs" / filename, destination)
+    for filename in ("clinical_variables.json", "prepare_multimodal.py"):
+        destination = release / "examples" / filename
+        destination.parent.mkdir(exist_ok=True)
+        shutil.copy2(ROOT / "examples" / filename, destination)
     notices = []
     distributions = sorted(importlib.metadata.distributions(), key=lambda item: item.metadata.get("Name", "").lower())
     # License texts for dependencies actually present in the frozen app, not dev tools.

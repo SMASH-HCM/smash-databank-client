@@ -7,16 +7,16 @@ import sqlite3
 
 import pytest
 
-from omop_exporter.cli import main
-from omop_exporter.database import OmopDatabase
-from omop_exporter.features import load_variable_set, resolve_variables, save_variable_set
-from omop_exporter.local_tools import export_cohorts, select_variables
-from omop_exporter.menu import run_menu
-from omop_exporter.menu_ui import actions
-from omop_exporter.presentation import status_panel
-from omop_exporter.progress import DownloadProgress
-from omop_exporter.reports import summary_report, write_report
-from omop_exporter.workspace import Workspace
+from smash_hcm_databank_client.cli import main
+from smash_hcm_databank_client.database import OmopDatabase
+from smash_hcm_databank_client.features import load_variable_set, resolve_variables, save_variable_set
+from smash_hcm_databank_client.local_tools import export_cohorts, select_variables
+from smash_hcm_databank_client.menu import run_menu
+from smash_hcm_databank_client.menu_ui import actions
+from smash_hcm_databank_client.presentation import status_panel
+from smash_hcm_databank_client.progress import DownloadProgress
+from smash_hcm_databank_client.reports import summary_report, write_report
+from smash_hcm_databank_client.workspace import Workspace
 from test_download_flow import answers
 
 
@@ -157,7 +157,9 @@ def test_custom_ui_saves_and_reuses_selection(database, tmp_path):
     keys = select_variables(state, database, answers("1", "Common numeric", "2", "Chosen"), output.append, True, custom_only=True)
     assert keys == [("measurement", 10)]
     assert len(list((state.root / "variable_sets").glob("*.json"))) == 1
-    assert select_variables(state, database, answers("11"), output.append, True) == keys
+    from smash_hcm_databank_client.features import PRESETS
+    restored = select_variables(state, database, answers(str(len(PRESETS) + 1)), output.append, True)
+    assert resolve_variables(database, restored) == keys
 
 
 def test_local_report_menu_works_offline_without_manifest(tmp_path, omop_path):

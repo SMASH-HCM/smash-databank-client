@@ -5,10 +5,10 @@ import sqlite3
 
 import pytest
 
-from omop_exporter.manifest import validate_manifest
-from omop_exporter.nextcloud import NextcloudError
-from omop_exporter.updates import apply_update, check_updates, refresh_manifest, startup_updates, update_candidates
-from omop_exporter.workspace import Workspace, default_state_dir, default_env_file
+from smash_hcm_databank_client.manifest import validate_manifest
+from smash_hcm_databank_client.nextcloud import NextcloudError
+from smash_hcm_databank_client.updates import apply_update, check_updates, refresh_manifest, startup_updates, update_candidates
+from smash_hcm_databank_client.workspace import Workspace, default_state_dir, default_env_file
 from test_manifest_workspace import FakeClient, entry, env_file, manifest_file
 
 
@@ -188,7 +188,7 @@ def test_no_login_keeps_local_tools_available_without_network(tmp_path):
 def test_startup_404_retains_cache_and_reports_access_separately(tmp_path, monkeypatch):
     workspace, server = configured(tmp_path)
     previous = workspace.state["manifest_path"]
-    monkeypatch.setattr("omop_exporter.updates.refresh_manifest", lambda *args, **kwargs: (_ for _ in ()).throw(NextcloudError("Missing", status_code=404)))
+    monkeypatch.setattr("smash_hcm_databank_client.updates.refresh_manifest", lambda *args, **kwargs: (_ for _ in ()).throw(NextcloudError("Missing", status_code=404)))
     messages = []
     startup_updates(workspace, read=lambda prompt: "y", write=messages.append, plain=True)
     assert workspace.connection_status is True and workspace.state["manifest_path"] == previous
@@ -284,10 +284,10 @@ def test_first_successful_startup_downloads_manifest_after_yes(tmp_path):
 
 
 def test_menu_runs_startup_flow_after_initial_setup(tmp_path, monkeypatch):
-    from omop_exporter.menu import run_menu
-    monkeypatch.setattr("omop_exporter.menu.native_vault", lambda: (_ for _ in ()).throw(NextcloudError("No vault")))
+    from smash_hcm_databank_client.menu import run_menu
+    monkeypatch.setattr("smash_hcm_databank_client.menu.native_vault", lambda: (_ for _ in ()).throw(NextcloudError("No vault")))
     seen = []
-    monkeypatch.setattr("omop_exporter.menu.startup_updates", lambda workspace, *args: seen.append(workspace.session.username))
+    monkeypatch.setattr("smash_hcm_databank_client.menu.startup_updates", lambda workspace, *args: seen.append(workspace.session.username))
     workspace = Workspace(tmp_path / "state", tmp_path / "missing.env")
     supplied = iter(["fixture", "2", "6"])
     assert run_menu(workspace, initial_setup=True, read=lambda prompt: next(supplied), password_read=lambda prompt: "fake-password", write=lambda value: None, plain=True) == 0

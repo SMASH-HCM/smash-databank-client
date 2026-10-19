@@ -4,7 +4,7 @@ import uuid
 
 from .database import OmopDatabase
 from .exports import export_events, DOMAINS
-from .features import PRESETS, load_variable_set, resolve_variables, save_variable_set, variable_catalog, selection_spec
+from .features import PRESETS, load_variable_set, resolve_variables, save_variable_set, variable_catalog, freeze_selection, selection_spec, anchor_features
 from .datasets import export_dataset
 from .output import bundle, write_json
 from .prompts import ask, choose, choose_many, confirm, text
@@ -19,9 +19,8 @@ def select_variables(workspace, database, read=input, write=print, plain=False, 
             options.append((name, label))
             try:
                 keys = resolve_variables(database, name)
-                _, families = selection_spec(name)
-                resolved[name] = {"keys": keys, "families": families} if families else keys
-                options[-1] = (name, label + " (" + str(len(keys)) + " source variables)")
+                resolved[name] = freeze_selection(database, name)
+                options[-1] = (name, label + " (" + str(len(keys)) + " source variables" + (" + baseline age" if anchor_features(name) else "") + ")")
             except ValueError as exc:
                 reasons[name] = str(exc)
     for path in sorted((workspace.root / "variable_sets").glob("*.json")):
@@ -29,7 +28,7 @@ def select_variables(workspace, database, read=input, write=print, plain=False, 
             data = load_variable_set(path)
             name = "saved:" + str(path)
             options.append((name, "Saved: " + data["name"] + " (" + str(len(data["keys"])) + " variables)"))
-            resolved[name] = data if data.get("families") else data["keys"]
+            resolved[name] = data
         except (OSError, ValueError):
             pass
     options += [("custom", "Choose variables from the database list"), ("load", "Load a saved variable-set JSON file")]
@@ -41,7 +40,7 @@ def select_variables(workspace, database, read=input, write=print, plain=False, 
     elif option[0] == "load":
         path = ask("Variable-set JSON file", read=read, write=write, plain=plain, path=True).strip().strip('"')
         data = load_variable_set(path) if path else None
-        keys = data if data and data.get("families") else data["keys"] if data else None
+        keys = data if data else None
         if not keys:
             return None
     else:
@@ -69,7 +68,7 @@ def select_variables(workspace, database, read=input, write=print, plain=False, 
 
 def export_cohorts(database, destination, cohorts, variables, fmt):
     """Reuse one frozen variable list for explicit cohorts; never randomly split."""
-    keys = resolve_variables(database, variables)
+    keys = freeze_selection(database, variables)
     cohorts = list(dict.fromkeys(cohorts))
     if not cohorts or fmt not in ("tabular", "events"):
         raise ValueError("Choose cohorts and a supported export format")

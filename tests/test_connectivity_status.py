@@ -5,11 +5,11 @@ from urllib.error import HTTPError, URLError
 
 import pytest
 
-from omop_exporter.connectivity import probe_server
-from omop_exporter.menu import run_menu
-from omop_exporter.presentation import status_panel, write_status
-from omop_exporter.settings import SMASH_URL
-from omop_exporter.workspace import Workspace
+from smash_hcm_databank_client.connectivity import probe_server
+from smash_hcm_databank_client.menu import run_menu
+from smash_hcm_databank_client.presentation import status_panel, write_status
+from smash_hcm_databank_client.settings import SMASH_URL
+from smash_hcm_databank_client.workspace import Workspace
 
 
 class Opener:
@@ -96,7 +96,7 @@ def test_real_menu_probes_once_before_first_status_and_offline_still_exits(tmp_p
     def probe():
         calls.append(True)
         return {"available": False, "detail": "HTTPS check timed out"}
-    monkeypatch.setattr("omop_exporter.menu.probe_server", probe)
+    monkeypatch.setattr("smash_hcm_databank_client.menu.probe_server", probe)
     state = Workspace(tmp_path / "state", tmp_path / "absent.env")
     assert run_menu(state, read=lambda _: "6", write=output.append, plain=True) == 0
     assert len(calls) == 1 and "timed out" in "\n".join(output)
@@ -105,7 +105,7 @@ def test_real_menu_probes_once_before_first_status_and_offline_still_exits(tmp_p
 
 def test_native_status_uses_green_red_styles_and_honors_no_color(tmp_path, monkeypatch):
     import prompt_toolkit
-    import omop_exporter.presentation as presentation
+    import smash_hcm_databank_client.presentation as presentation
     state = Workspace(tmp_path / "state", tmp_path / "absent.env")
     state.server_status = {"available": True, "detail": "HTTPS reachable; login not checked"}
     captured = []

@@ -15,7 +15,7 @@ from importlib import resources
 ROOT = Path(__file__).resolve().parent
 SQL_PATH = ROOT / "export_smash_omop.sql"
 if not SQL_PATH.is_file():
-    SQL_PATH = resources.files("omop_exporter").joinpath("resources/legacy_export.sql")
+    SQL_PATH = resources.files("smash_hcm_databank_client").joinpath("resources/legacy_export.sql")
 COPY_RE = re.compile(r"COPY\s*\((.*?)\)\s*TO\s*'/out/([^']+)'\s*WITH\s*\(FORMAT CSV, HEADER TRUE\);", re.I | re.S)
 
 
@@ -38,7 +38,7 @@ def connection_args(config):
 
 
 def run_python(script, *arguments):
-    subprocess.run([sys.executable, "-m", Path(script).stem, *map(str, arguments)], check=True)
+    subprocess.run([sys.executable, "-m", "smash_hcm_databank_client.legacy." + Path(script).stem, *map(str, arguments)], check=True)
 
 
 def restore(config):

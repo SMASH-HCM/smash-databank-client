@@ -14,14 +14,14 @@ def set_candidate_version(root, version):
     if not re.fullmatch(r"\d+\.\d+\.\d+rc[1-9]\d*", version):
         raise ValueError("Invalid PEP 440 release-candidate version")
     root = Path(root)
-    for relative, field in (("pyproject.toml", "version"), ("omop_exporter/__init__.py", "__version__")):
+    for relative, field in (("pyproject.toml", "version"), ("src/smash_hcm_databank_client/__init__.py", "__version__")):
         path = root / relative
         source = path.read_text(encoding="utf-8")
         match = re.search(r'^' + field + r' = "([^"]+)"$', source, re.M)
         if not match or match.group(1) != version.split("rc")[0]:
             raise ValueError("Candidate base differs from the source version")
     # Validate both files before modifying either.
-    for relative, field in (("pyproject.toml", "version"), ("omop_exporter/__init__.py", "__version__")):
+    for relative, field in (("pyproject.toml", "version"), ("src/smash_hcm_databank_client/__init__.py", "__version__")):
         path = root / relative
         path.write_text(re.sub(r'^' + field + r' = "[^"]+"$', field + ' = "' + version + '"', path.read_text(encoding="utf-8"), count=1, flags=re.M), encoding="utf-8")
 

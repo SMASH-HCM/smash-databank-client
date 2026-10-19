@@ -2,13 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from omop_exporter.manifest import select_downloads
-from omop_exporter.manifest_browser import ManifestTree, browse
-from omop_exporter.menu import run_menu
-from omop_exporter.menu_ui import actions, navigate
-from omop_exporter.nextcloud import NextcloudError
-from omop_exporter.presentation import status_panel
-from omop_exporter.settings import DATA_ACCESS_URL, SMASH_DATABANK_URL
+from smash_hcm_databank_client.manifest import select_downloads
+from smash_hcm_databank_client.manifest_browser import ManifestTree, browse
+from smash_hcm_databank_client.menu import run_menu
+from smash_hcm_databank_client.menu_ui import actions, navigate
+from smash_hcm_databank_client.nextcloud import NextcloudError
+from smash_hcm_databank_client.presentation import status_panel
+from smash_hcm_databank_client.settings import DATA_ACCESS_URL, SMASH_DATABANK_URL
 from test_download_flow import answers, item, workspace
 
 
@@ -92,21 +92,21 @@ def test_actual_plain_menu_uses_same_root_numbers_and_confirms_location(catalog,
     assert run_menu(state, read=answers("1", "4", str(tmp_path / "chosen"), "y", "6"), write=output.append, plain=True) == 0
     assert state.state["download_root"] == str(tmp_path / "chosen")
     assert not server.calls
-    assert any("SMASH-HCM DATABANK EXPORTER" in line for line in output)
+    assert any("SMASH-HCM DATABANK CLIENT" in line for line in output)
 
 
 def test_plain_root_access_request_is_option_five(catalog, monkeypatch):
     state, _ = catalog
     opened = []
-    monkeypatch.setattr("omop_exporter.menu.webbrowser.open", lambda url, new: opened.append(url) or True)
+    monkeypatch.setattr("smash_hcm_databank_client.menu.webbrowser.open", lambda url, new: opened.append(url) or True)
     run_menu(state, read=answers("5", "6"), write=lambda value: None, plain=True)
     assert opened == [DATA_ACCESS_URL]
 
 
 @pytest.mark.parametrize("width", [54, 80, 100])
-def test_status_box_stays_aligned_with_long_directory_and_shows_release(catalog, width):
+def test_status_box_stays_aligned_with_long_directory_and_shows_release(catalog, width, tmp_path):
     state, _ = catalog
-    state.state["download_root"] = str(Path("K:/SMASH_DATA") / ("long-folder-" * 12))
+    state.state["download_root"] = str(tmp_path / ("long-folder-" * 12))
     rendered = status_panel(state, width)
     assert all(len(line) == width and line.startswith("|") and line.endswith("|") for line in rendered.splitlines())
     assert "Local directory:" in rendered and "Local OMOP database:" in rendered and "Databank manifest:" in rendered
@@ -117,7 +117,7 @@ def test_status_box_stays_aligned_with_long_directory_and_shows_release(catalog,
 
 
 def test_cohorts_then_multiple_data_types_download_every_published_pair(tmp_path):
-    from omop_exporter.download_flow import download
+    from smash_hcm_databank_client.download_flow import download
     entries = [item(cohort + "-" + modality + ".zip", [cohort], [modality])
                for cohort in ("FLORENCE-TRAIN", "RENNES-TEST") for modality in ("ECG", "ECHO")]
     state, server = workspace(tmp_path, entries)
@@ -126,7 +126,7 @@ def test_cohorts_then_multiple_data_types_download_every_published_pair(tmp_path
 
 
 def test_partial_modality_is_disabled_and_no_requested_pair_is_silently_missing(tmp_path):
-    from omop_exporter.download_flow import download
+    from smash_hcm_databank_client.download_flow import download
     entries = [item("florence-ecg.zip", ["FLORENCE-TRAIN"], ["ECG"]),
                item("rennes-ecg.zip", ["RENNES-TEST"], ["ECG"]), item("florence-mri.zip", ["FLORENCE-TRAIN"], ["MRI"])]
     state, server = workspace(tmp_path, entries)

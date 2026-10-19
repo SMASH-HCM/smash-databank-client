@@ -6,8 +6,8 @@ from urllib import error, request
 
 import pytest
 
-from omop_exporter.cli import main
-from omop_exporter.nextcloud import NextcloudClient, NextcloudConfig, NextcloudError, NoRedirect, read_dotenv, remote_path
+from smash_hcm_databank_client.cli import main
+from smash_hcm_databank_client.nextcloud import NextcloudClient, NextcloudConfig, NextcloudError, NoRedirect, read_dotenv, remote_path
 
 
 class Response(io.BytesIO):

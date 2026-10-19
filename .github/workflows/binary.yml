@@ -47,7 +47,7 @@ jobs:
         shell: python
         run: |
           import pathlib, subprocess, tempfile, sys
-          executable = next(pathlib.Path('dist/binary').glob('*/omop-exporter.exe' if sys.platform == 'win32' else '*/omop-exporter')).resolve()
+          executable = next(pathlib.Path('dist/binary').glob('*/smash-hcm-databank-client.exe' if sys.platform == 'win32' else '*/smash-hcm-databank-client')).resolve()
           with tempfile.TemporaryDirectory() as directory:
               subprocess.run([str(executable), '--version'], cwd=directory, check=True)
               subprocess.run([str(executable), '--help'], cwd=directory, check=True)
@@ -58,7 +58,7 @@ jobs:
               if sys.platform == 'win32':
                   assert details['native_vault'].startswith('keyring.backends.Windows.')
               result = subprocess.run([str(executable), 'menu', '--state-dir', str(pathlib.Path(directory) / 'state'), '--plain'], cwd=directory, input='0\n', text=True, capture_output=True, check=True)
-              assert 'SMASH-HCM DATABANK EXPORTER' in result.stdout
+              assert 'SMASH-HCM DATABANK CLIENT' in result.stdout
               assert '[NO]' in result.stdout and '<unset>' in result.stdout
               assert 'Local OMOP' in result.stdout
               assert 'Data Access Request' in result.stdout
@@ -101,8 +101,10 @@ jobs:
               venv.create(root / 'venv', with_pip=True)
               python = root / 'venv/bin/python'
               subprocess.run([str(python), '-m', 'pip', 'install', '--no-deps', str(wheel)], check=True)
-              subprocess.run([str(python), '-m', 'omop_exporter', '--version'], cwd=root, check=True)
-              subprocess.run([str(python), '-m', 'omop_exporter', '--help'], cwd=root, check=True)
+              subprocess.run([str(python), '-m', 'smash_hcm_databank_client', '--version'], cwd=root, check=True)
+              subprocess.run([str(python), '-m', 'smash_hcm_databank_client', '--help'], cwd=root, check=True)
+              subprocess.run([str(root / 'venv/bin/smash-hcm-databank-client'), '--version'], cwd=root, check=True)
+              assert not (root / 'venv/bin/omop-exporter').exists()
       - name: Python package checksums
         shell: python
         run: |

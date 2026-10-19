@@ -12,7 +12,7 @@ from statistics import mean
 
 from . import __version__
 from .database import FACTS, quote, sha256
-from .features import resolve_variables, save_variable_set, selection_spec
+from .features import resolve_variables, save_variable_set, selection_spec, anchor_features
 from .availability import held_reason, policy_document
 from .output import bundle, write_csv, write_json
 
@@ -63,6 +63,7 @@ def export_wide(database, destination, cohort, variables="core", index="baseline
     if any(value not in HISTORY_FEATURES for value in history_features) or (history_features and tabular_mode != "latest-history"):
         raise ValueError("History features require latest-history mode and supported feature names")
     _, families = selection_spec(variables)
+    anchor_columns = anchor_features(variables)
     if families and history_features:
         raise ValueError("Categorical family consolidation and derived history columns must be exported separately")
     availability.update(tabular_mode=tabular_mode, lookback_days=lookback_days, carry_forward=tabular_mode == "latest-history")
@@ -135,7 +136,7 @@ def export_wide(database, destination, cohort, variables="core", index="baseline
             elif event == previous[0]:
                 previous[1].append(value)
     # Unit identity is resolved across the release, not refitted on each site.
-    fields = ["person_id", "site", "cohort", "snapshot_date"] + [table + "__" + str(cid) for table, cid in keys]
+    fields = ["person_id", "site", "cohort", "snapshot_date"] + [table + "__" + str(cid) for table, cid in keys] + anchor_columns
     fields += [table + "__" + str(cid) + "__" + option.replace("-", "_") for table, cid in keys for option in history_features]
     audit, rows, samples, provenance, history_provenance = Counter(), [], [], [], []
     presence = {"condition_occurrence", "procedure_occurrence", "drug_exposure", "device_exposure"}
@@ -143,6 +144,10 @@ def export_wide(database, destination, cohort, variables="core", index="baseline
         anchor, age = anchors[pid]
         sample_id = str(pid) + ":baseline"
         row = {"person_id": pid, "site": people[pid], "cohort": cohort_info["name"], "snapshot_date": anchor.isoformat()}
+        if "baseline_age_years" in anchor_columns:
+            row["baseline_age_years"] = age
+            provenance.append({"landmark_id": sample_id, "feature": "baseline_age_years", "table": "smash_endpoint_censor", "concept_id": "",
+                               "unit_concept_id": "", "event_date": anchor.isoformat(), "qc_reason": "embedded_baseline_age_years"})
         samples.append({"landmark_id": sample_id, "person_id": pid, "baseline_date": anchor.isoformat(), "baseline_age_years": age})
         for table, cid in keys:
             feature = table + "__" + str(cid)
@@ -196,8 +201,8 @@ def export_wide(database, destination, cohort, variables="core", index="baseline
     with bundle(destination) as stage:
         write_json(stage / "availability_policy.json", availability)
         write_csv(stage / "availability_exclusions.csv", ["person_id", "landmark_id", "table", "concept_id", "fact_id", "event_date", "reason"], removed)
-        save_variable_set(stage / "variable_set.json", database, {"keys": keys, "families": families})
-        write_json(stage / "feature_definitions.json", {"columns": fields[4:], "source_variables": keys, "families": families, "history_features": history_features})
+        save_variable_set(stage / "variable_set.json", database, {"keys": keys, "families": families, "anchor_features": anchor_columns})
+        write_json(stage / "feature_definitions.json", {"columns": fields[4:], "source_variables": keys, "families": families, "anchor_features": anchor_columns, "history_features": history_features})
         write_csv(stage / "data.csv", fields, rows)
         write_csv(stage / "samples.csv", ["landmark_id", "person_id", "baseline_date", "baseline_age_years"], samples)
         write_csv(stage / "variables.csv", ["feature", "table", "concept_id", "concept_name", "unit_concept_ids"],
@@ -217,7 +222,7 @@ def export_wide(database, destination, cohort, variables="core", index="baseline
                    "variables": keys, "index": "baseline", "availability_policy": availability_policy, "tabular_mode": tabular_mode,
                    "boundary": "exact baseline date only; post-assessment/pre-intervention mask" if tabular_mode == "snapshot" else "on/before baseline with post-assessment/pre-intervention mask" if availability_policy == "post-assessment" else "strictly before baseline date", "lookback_days": lookback_days,
                    "aggregation": "explicit derived history columns; see history_definition" if history_features else "none; conflicting same-day values are held blank, identical repeats do not add columns", "carry_forward": tabular_mode == "latest-history",
-                   "feature_families": families, "history_features": history_features,
+                   "feature_families": families, "anchor_features": anchor_columns, "history_features": history_features,
                    "history_definition": "Inclusive lookback to prediction boundary after availability mask. One QC-valid value per distinct date, identical repeats collapsed, conflicting dates excluded from numeric summaries. Previous is the preceding distinct observed date, not the previous raw row; a conflicting previous date stays blank. Count is valid observed dates, blank when none; numeric summaries never average category IDs or mix units. Ages are days before baseline. No observation-window completeness is assumed.",
                    "availability_excluded_events": len(removed), "availability_affected_people": len({row["person_id"] for row in removed}), "availability": availability,
                    "qc_counts": dict(audit), "labels": "not included; feature-only export",

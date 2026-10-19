@@ -6,7 +6,7 @@ import sys
 SMASH_URL = "https://smash-hcm.ucd.ie"
 SMASH_REMOTE_ROOT = "databank"
 SMASH_DATABANK_URL = SMASH_URL + "/" + SMASH_REMOTE_ROOT
-APP_TITLE = "SMASH-HCM DATABANK EXPORTER"
+APP_TITLE = "SMASH-HCM DATABANK CLIENT"
 SMASH_MANIFEST = "manifest.json"
 DATA_ACCESS_URL = "https://forms.gle/nNDDBbX8ah15dNcs8"
 VAULT_SERVICE = "omop-exporter:nextcloud:smash-hcm.ucd.ie"

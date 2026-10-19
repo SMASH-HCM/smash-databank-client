@@ -18,7 +18,7 @@ def test_legacy_sparse_unknown_unit_regression(tmp_path):
             for age, value, unit in [("49", "10", "8582"), ("49.5", "100", ""), ("50", "999", "8582"), ("50.1", "888", "8582")]]
     write_csv(tmp_path / "age_omop_events.csv", fields, rows)
     out = tmp_path / "sparse.csv"
-    subprocess.run([sys.executable, "-m", "export_omop_tabular", "--data-dir", str(tmp_path), "--output", str(out)], check=True, capture_output=True)
+    subprocess.run([sys.executable, "-m", "smash_hcm_databank_client.legacy.export_omop_tabular", "--data-dir", str(tmp_path), "--output", str(out)], check=True, capture_output=True)
     with out.open() as handle:
         result = list(csv.DictReader(handle))[0]
     assert result["event_count"] == "2"
@@ -28,12 +28,12 @@ def test_legacy_sparse_unknown_unit_regression(tmp_path):
 
 
 def test_legacy_help_does_not_require_yaml_or_postgres():
-    result = subprocess.run([sys.executable, "-m", "main", "--help"], capture_output=True, text=True)
+    result = subprocess.run([sys.executable, "-m", "smash_hcm_databank_client.legacy.main", "--help"], capture_output=True, text=True)
     assert result.returncode == 0
 
 
 def test_packaged_legacy_sql_has_seven_contracts():
-    import main
+    from smash_hcm_databank_client.legacy import main
     assert len(main.COPY_RE.findall(main.SQL_PATH.read_text(encoding="utf-8"))) == 7
 
 
@@ -46,7 +46,7 @@ def test_annual_training_and_fixed_holdout_landmarks(tmp_path):
     label_fields = ["person_id", "endpoint", "horizon_years", "event_date", "label_reason", "cohort_status_conflict", "prevalent_at_baseline"]
     write_csv(tmp_path / "horizon_labels.csv", label_fields,
               [{"person_id": pid, "endpoint": "overall", "horizon_years": "1", "event_date": "2022-03-01", "label_reason": "observed_event", "cohort_status_conflict": "0", "prevalent_at_baseline": "0"} for pid in ("1", "2")])
-    subprocess.run([sys.executable, "-m", "build_rolling_landmarks", "--data-dir", str(tmp_path)], capture_output=True, check=True)
+    subprocess.run([sys.executable, "-m", "smash_hcm_databank_client.legacy.build_rolling_landmarks", "--data-dir", str(tmp_path)], capture_output=True, check=True)
     with (tmp_path / "landmarks.csv").open() as handle:
         rows = list(csv.DictReader(handle))
     train = [row for row in rows if row["person_id"] == "1"]

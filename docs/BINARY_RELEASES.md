@@ -1,18 +1,18 @@
 # Portable application releases
 
-The collaborator application can be distributed with Python, SQLite/HTTPS support, the arrow-key menu, native credential-vault support and YAML configuration included. Users extract a release ZIP and run `omop-exporter.exe` on Windows; no Python installation, source checkout or pip commands are required. The OMOP database and imaging/ECG assets are separate downloads. Credentials and local state are never release inputs.
+The collaborator application can be distributed with Python, SQLite/HTTPS support, the arrow-key menu, native credential-vault support and YAML configuration included. Users extract a release ZIP and run `smash-hcm-databank-client.exe` on Windows; no Python installation, source checkout or pip commands are required. The OMOP database and imaging/ECG assets are separate downloads. Credentials and local state are never release inputs.
 
 ## Run a Windows release
 
 1. Extract the entire ZIP into a writable, protected folder. Keep the executable and its `_internal` folder together.
-2. Run `omop-exporter.exe` and choose **1. Setup**. You can also use `.\omop-exporter.exe setup` in a terminal to open login setup directly.
+2. Run `smash-hcm-databank-client.exe` and choose **1. Setup**. You can also use `.\smash-hcm-databank-client.exe setup` in a terminal to open login setup directly.
 3. Configure your login. Automatic access checking then offers **Check for data updates?**; Yes refreshes the manifest and offers selected updates. Connection/manifest actions remain available separately for diagnosis. Request access from the main menu if needed.
 4. Choose **2. Download**, then a database, published CSV dataset, cohort ZIPs or specific files/folders. For cohort ZIPs, tick cohorts first, then data types, and review the file list. The manifest browser supports individual/multiple files, direct folder contents and recursive subfolders.
 5. Confirm the download folder (default `~/SMASH-HCM`) and confirm the transfer. Use **4. Validate** on later visits to find deleted or modified files. Use **3. Local OMOP** for local reports, saved variable sets and cohort exports. The remaining main choices are **5. Data Access Request** and **6. Exit**. Plain and arrow menus use the same hierarchy.
 
 Current Python and portable installations keep new profiles under `~/.smash/omop-exporter/`. Existing source checkouts with `.smash/state.json` and working-directory `.env` remain compatible. Native vault storage is recommended; explicit plaintext profile storage is optional. Data uses the separately confirmed folder. Override old locations using `menu --state-dir ... --env-file ...`. New bundles contain no developer credentials or configured data paths. See [MENU.md](MENU.md).
 
-Arrow keys and Enter navigate grouped submenus. Enabled actions are colored and disabled choices are grey with an explanation. The numbered menu remains available with `--plain`, for example `.\omop-exporter.exe menu --plain`. Noninteractive streams use plain output automatically. Data Access Request opens only the fixed public form; it does not submit a request.
+Arrow keys and Enter navigate grouped submenus. Enabled actions are colored and disabled choices are grey with an explanation. The numbered menu remains available with `--plain`, for example `.\smash-hcm-databank-client.exe menu --plain`. Noninteractive streams use plain output automatically. Data Access Request opens only the fixed public form; it does not submit a request.
 
 ## Build locally
 

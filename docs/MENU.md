@@ -1,8 +1,8 @@
 # SMASH-HCM Databank Client menu
 
-Repository: [SMASH-HCM/smash-hcm-databank-client](https://github.com/SMASH-HCM/smash-hcm-databank-client). The compatible executable/command remains `omop-exporter`.
+Repository: [SMASH-HCM/smash-hcm-databank-client](https://github.com/SMASH-HCM/smash-hcm-databank-client). The executable/command is `smash-hcm-databank-client`.
 
-For the portable Windows application, extract the ZIP and run `omop-exporter.exe`. Python is included. The title is **SMASH-HCM DATABANK EXPORTER**. The boxed header shows the databank URL, selected local directory, local OMOP version and manifest release; missing database/manifest values are `<unavailable>`. Long paths wrap inside the box. Use Up/Down and Enter to open a section, and Space to tick items in multi-select lists. You can cancel or go Back without downloading anything.
+For the portable Windows application, extract the ZIP and run `smash-hcm-databank-client.exe`. Python is included. The title is **SMASH-HCM DATABANK CLIENT**. The boxed header shows the databank URL, selected local directory, local OMOP version and manifest release; missing database/manifest values are `<unavailable>`. Long paths wrap inside the box. Use Up/Down and Enter to open a section, and Space to tick items in multi-select lists. You can cancel or go Back without downloading anything.
 
 ## Everyday workflow
 
@@ -30,16 +30,16 @@ From the exporter checkout in PowerShell:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -e ".[secure,ui]"
-.\.venv\Scripts\omop-exporter.exe setup
+.\.venv\Scripts\smash-hcm-databank-client.exe setup
 ```
 
-`setup` asks for your username and a hidden app password, then opens the menu. On later visits run `omop-exporter` with no arguments, or `omop-exporter menu`. Use a Nextcloud app password from Personal settings → Security. The server `https://smash-hcm.ucd.ie` and mounted folder `databank` are fixed in the menu. The browser's folder ID `324` is not part of its WebDAV path.
+`setup` asks for your username and a hidden app password, then opens the menu. On later visits run `smash-hcm-databank-client` with no arguments, or `smash-hcm-databank-client menu`. Use a Nextcloud app password from Personal settings → Security. The server `https://smash-hcm.ucd.ie` and mounted folder `databank` are fixed in the menu. The browser's folder ID `324` is not part of its WebDAV path.
 
 With the optional `ui` extra (included in portable builds), Up/Down and Enter navigate grouped submenus. Available actions are colored; unavailable actions are grey, cannot be selected, and state the missing prerequisite. Availability is recalculated after actions using local state, with no background login/network request. A configured login means a connection can be attempted; it does not prove credentials are valid or access has been granted. Use the connection check for that. `menu --plain` forces numbered menus; piped input and installations without `ui` use numbered output automatically, with explicit availability labels.
 
 Windows users can instead extract and run the [portable application](BINARY_RELEASES.md), with no Python install. `doctor` reports the bundled libraries and native-vault backend without reading saved passwords.
 
-The SMASH logo appears above local status. Use **Validate → Select a local OMOP database**, or `omop-exporter menu --db <path>`. Version information comes from embedded metadata or the download manifest; otherwise it is labelled unknown. The saved download locations are checked for a unique usable SQLite database; unrelated drives are not scanned.
+The SMASH logo appears above local status. Use **Validate → Select a local OMOP database**, or `smash-hcm-databank-client menu --db <path>`. Version information comes from embedded metadata or the download manifest; otherwise it is labelled unknown. The saved download locations are checked for a unique usable SQLite database; unrelated drives are not scanned.
 
 The full logo is 158 columns wide. Smaller terminals use quadrant block characters to scale the supplied image while preserving its layout; terminals without Unicode support use an ASCII rendering of the same silhouette.
 
@@ -115,7 +115,7 @@ Upload the completed JSON as `databank/manifest.json`, or enter another relative
 
 Publish one record per actual file; add each available cohort's CSVs/archives separately. `kind: tabular-export` or a `.csv`/`.csv.gz` extension identifies a published table. Cohort bundles require `.zip`, `cohorts` and `modalities` tags. Use `representation: npz`, `nifti`, etc. Raw/DICOM representations are excluded from the main processed-bundle chooser and remain accessible as explicit files in Advanced tools. A multi-cohort selection matches any selected cohort, AND the chosen modality/variable set; a shared tagged archive is downloaded only once. A requested cohort with no matching published file is never silently substituted. Blank/unsupported cohort tags disable guided selection for that category.
 
-Downloads are staged, checked for size and SHA-256, then published. Verified cached files in the chosen location are reused; an explicit repeat download repairs a corrupt cache entry into a fresh directory. Failed files are listed without discarding successful transfers. Verification distinguishes a manifest reference from a local receipt; saved expected hashes still work if the manifest copy is unavailable. An external database without an expected hash is reported as `NO EXPECTED CHECKSUM`. Checksums validate bytes, not clinical completeness or image/signal format. Technical database/schema checks remain available through `omop-exporter validate --db <path>`.
+Downloads are staged, checked for size and SHA-256, then published. Verified cached files in the chosen location are reused; an explicit repeat download repairs a corrupt cache entry into a fresh directory. Failed files are listed without discarding successful transfers. Verification distinguishes a manifest reference from a local receipt; saved expected hashes still work if the manifest copy is unavailable. An external database without an expected hash is reported as `NO EXPECTED CHECKSUM`. Checksums validate bytes, not clinical completeness or image/signal format. Technical database/schema checks remain available through `smash-hcm-databank-client validate --db <path>`.
 
 ## Local variable exports
 
@@ -124,7 +124,7 @@ Version 0.10 menu configuration and output locations are documented in [DATASET_
 The main CSV download retrieves existing published files. Separately, **Download → Generate new exports from local OMOP** calculates core and exclusive two-site variables from the supplied database alone and generates new local outputs. First select an existing database under Validate when needed. It offers baseline tabular output first, with full-history event output as an alternative.
 
 ```text
-omop-exporter export --db /protected/omop.db --cohort florence_train --format tabular --vars core --out /protected/exports/florence-train
+smash-hcm-databank-client export --db /protected/omop.db --cohort florence_train --format tabular --vars core --out /protected/exports/florence-train
 ```
 
 Baseline tabular output requires embedded cohorts and valid, unique clinical baseline dates/ages for every selected person. It produces `data.csv`, `samples.csv`, `variables.csv`, `feature_provenance.csv` and a reproducibility manifest. Every selected person remains present, including people with all features missing. Feature columns are stable table/concept keys. The 0.9 default selects only the exact baseline day under the post-assessment/pre-intervention mask, with no carry-forward. The main CSV has four metadata columns and one column per selected feature. Earlier-history lookup requires both explicit latest-history mode and a lookback. Baseline-day measurements and explicit clinical/diagnostic allowlists are eligible; unclassified same-day actions and administrative/outcome-derived observations are held out. Future evidence is excluded. Strict-before remains an explicit CLI control; see [BASELINE_AVAILABILITY.md](BASELINE_AVAILABILITY.md). Unknown/mixed units or conflicting latest values remain blank with QC reasons; no unit conversion or imputation is fitted. Presence-only facts mean documented positive evidence; absence remains unknown. Medication observation 3021806 is held blank pending class-context rules.

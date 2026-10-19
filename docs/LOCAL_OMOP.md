@@ -2,7 +2,7 @@
 
 Open **3. Local OMOP** after downloading or selecting a database. This section works without a login, internet connection or remote manifest. It is greyed out unless the selected SQLite file is readable and contains an OMOP `person.person_id` column. A corrupted/non-OMOP `.db` file does not enable it.
 
-At startup the app rechecks its selected database. If unavailable, it checks registered download receipts and the confirmed download folder at the fixed release/artifact depths (at most two subdirectories). A single readable OMOP database is selected and remembered. Full ETL `results__cohort` tables are resolved using the embedded `smash_export_metadata` schema map; ordinary duplicate table names still fail as ambiguous. Multiple candidates require **Validate → Select a local OMOP database**; no version is silently preferred. Unrelated drives and project folders are not searched. You can also launch `omop-exporter.exe menu --db <path>`.
+At startup the app rechecks its selected database. If unavailable, it checks registered download receipts and the confirmed download folder at the fixed release/artifact depths (at most two subdirectories). A single readable OMOP database is selected and remembered. Full ETL `results__cohort` tables are resolved using the embedded `smash_export_metadata` schema map; ordinary duplicate table names still fail as ambiguous. Multiple candidates require **Validate → Select a local OMOP database**; no version is silently preferred. Unrelated drives and project folders are not searched. You can also launch `smash-hcm-databank-client.exe menu --db <path>`.
 
 See [BASELINE_AVAILABILITY.md](BASELINE_AVAILABILITY.md) for the agreed baseline-day protocol, excluded treatment/outcome roles, strict-before controls and remaining intraday limitations.
 
@@ -25,9 +25,9 @@ Reports can be viewed in the terminal and saved as JSON/CSV. Endpoint/cohort led
 Examples:
 
 ```powershell
-.\omop-exporter.exe report inventory --db .\OMOP.db --out .\reports\inventory
-.\omop-exporter.exe report endpoints --db .\OMOP.db --out .\reports\endpoints
-.\omop-exporter.exe report distributions --db .\OMOP.db --out .\reports\distributions
+.\smash-hcm-databank-client.exe report inventory --db .\OMOP.db --out .\reports\inventory
+.\smash-hcm-databank-client.exe report endpoints --db .\OMOP.db --out .\reports\endpoints
+.\smash-hcm-databank-client.exe report distributions --db .\OMOP.db --out .\reports\distributions
 ```
 
 ## Choose variables once and reuse them
@@ -41,9 +41,9 @@ Choose **Choose variables from the database list** to filter by concept name, ID
 Each generated dataset includes `variable_set.json`. Tabular datasets also include `variables.csv`, `samples.csv`, feature provenance and a dataset manifest with database/output checksums. Reuse the exact JSON list to keep training and test columns consistent:
 
 ```powershell
-.\omop-exporter.exe export --db .\OMOP.db --format tabular --cohort FLORENCE-TRAIN --vars core --out .\train
-.\omop-exporter.exe export --db .\OMOP.db --format tabular --cohort RENNES-TEST --variables-file .\train\variable_set.json --out .\test
-.\omop-exporter.exe export --db .\OMOP.db --format events --cohort RENNES-TEST --variables-file .\train\variable_set.json --out .\events
+.\smash-hcm-databank-client.exe export --db .\OMOP.db --format tabular --cohort FLORENCE-TRAIN --vars shared-clinical --out .\train
+.\smash-hcm-databank-client.exe export --db .\OMOP.db --format tabular --cohort RENNES-TEST --variables-file .\train\variable_set.json --out .\test
+.\smash-hcm-databank-client.exe export --db .\OMOP.db --format events --cohort RENNES-TEST --variables-file .\train\variable_set.json --out .\events
 ```
 
 Saved concepts absent from another release/site are retained as blank tabular columns, with a menu notice. Concept IDs alone do not resolve unit/context conflicts; export quality rules still apply. Menu batches freeze one ordered list, preserve database memberships and write `DATA_DIR/<group>/train.csv,test.csv` with split audit subfolders, or `DATA_DIR/event_stream/<cohort>/`. CLI `--data-dir` uses the same layout; explicit `--out` still writes a new low-level bundle with `data.csv` or `omop_events.csv`. The legacy Python `export_cohorts` bundle helper retains its `cohort-<id>` API for existing callers. Failed batches publish no partial datasets. Default tabular output has four metadata columns and one column per source feature; only explicitly configured families/history change that schema.

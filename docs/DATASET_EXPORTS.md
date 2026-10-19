@@ -38,6 +38,8 @@ PILOT and TEST are naming distinctions; original IDs and memberships remain in t
 
 `--out` remains an explicit low-level bundle destination for scripts: it writes `data.csv` or `omop_events.csv` inside a new directory. `--out` and `--data-dir` are mutually exclusive. The menu uses the standard DATA_DIR layout.
 
+See [INDEXING_AND_LANDMARKS.md](INDEXING_AND_LANDMARKS.md) for the difference between the fixed baseline, an input history window, an outcome horizon and repeated training landmarks.
+
 ## Tabular configuration
 
 The default is one patient, one baseline day, one selected source feature per column. Four metadata fields precede the features: `person_id`, `site`, `cohort`, `snapshot_date`. There are no history-derived columns, averages, implicit carry-forward, scaling or imputation. Baseline ages, source units and provenance live in companion files. Conflicting same-day values remain missing; identical repeats collapse without averaging.
@@ -66,24 +68,42 @@ Annual/multiple prediction indices, endpoint-specific risk sets, outcome labels,
 
 ## Available feature sets
 
-Counts below describe RC4, not a fixed count promised across releases.
+Counts below describe the 18 October SQLite RC4 snapshot, not a fixed count promised across releases or evidence about a replacement file. Friendly names below are canonical; old preset identifiers remain CLI aliases.
 
 | Preset | RC4 source variables | Meaning |
 |---|---:|---|
-| `core` | 37 | Exact table/concept presence across all three sites |
-| `core+two-site` | 69 | CORE plus 32 exclusive two-site variables |
-| `two-site` | 32 | Exclusive two-site variables only |
-| `core-measurements` | 26 | Measurement-domain subset of CORE |
-| `minimal-measurements` | 8 | Fixed small measurement starter list, preserving missing columns |
-| `measurements` | 105 | All observed measurement-domain concepts |
-| `ecg-derived` | 3 | ECG-labelled measurements matched by name; narrow and not waveform processing |
-| `conditions` | 60 | All observed condition concepts |
-| `all` | 250 | All observed clinical table/concept pairs, excluding management concepts |
-| `core-consolidated` | 42 inputs → 36 output features | CORE with the MR grade family replacing its separate CORE grade indicators |
+| `shared-clinical` | 37 | Exact table/concept presence across all three sites |
+| `shared-extended` | 69 | CORE plus 32 exclusive two-site variables |
+| `two-site-only` | 32 | Exclusive two-site variables only |
+| `shared-measurements` | 26 | Measurement-domain subset of CORE |
+| `starter-measurements` | 8 | Fixed small measurement starter list, preserving missing columns |
+| `all-measurements` | 105 | All observed measurement-domain concepts |
+| `ecg-measurements` | 3 | ECG-labelled measurements matched by name; narrow and not waveform processing |
+| `diagnoses` | 60 | All observed condition concepts |
+| `all-clinical` | 250 | All observed clinical table/concept pairs, excluding management concepts |
+| `shared-grouped` | 42 inputs → 36 output features | CORE with the MR grade family replacing its separate CORE grade indicators |
 
 The eight starter measurements are height (607590), weight (4099154), BMI (4245997), systolic BP (4152194), diastolic BP (4154790), LVEF (4108582), interventricular septal thickness (3021917), and LVOT maximum systolic gradient (3026578). This is a transparent convenience list, not a validated HCM score or a claim that every source measure has equivalent acquisition context.
 
 The menu can also search the complete variable catalogue by name, concept ID or domain, multi-select variables, name/save a set, and load it later. `report features` produces the complete source concept lists for the presets; `report overlap` gives CORE and exclusive two-site lists with site coverage. Exported frozen lists retain table and concept IDs. Reuse the training list for test data, rather than discovering a new list or a new column order at test time.
+
+## ESC Risk-SCD clinical inputs
+
+`--vars esc-risk` selects seven fixed source concepts plus `baseline_age_years` from the anchor ledger. The output has **8 feature columns + 4 metadata columns** when no history extras are requested. Missing concepts retain blank columns. It does not calculate an ESC score or export the previously calculated score/recommendation as an input.
+
+| Required clinical input | Export source | Review needed |
+|---|---|---|
+| Age at assessment | `baseline_age_years` from `smash_endpoint_censor` | Recorded baseline age, not age at diagnosis |
+| Maximum LV wall thickness | `measurement__4353969` | Segmental-thickness concept includes mixed contexts; confirm maximum and appropriate modality |
+| Left atrial diameter | `measurement__3023614` | Confirm antero-posterior diameter, timing and mm units |
+| Maximum rest/Valsalva LVOT gradient | `measurement__3026578` and `measurement__2000001122` | Resting and provoked retained separately; no automatic max, unit conversion or assumption that provocation is Valsalva |
+| Family history of SCD | `observation__46270007` | Confirm relatives/age/HCM criteria and coded yes/no definitions |
+| NSVT | `condition_occurrence__40480274` | Confirm qualifying rhythm/duration and prior-to-index ascertainment |
+| Unexplained syncope | `condition_occurrence__135360` | Generic syncope does not establish unexplained syncope |
+
+The seven clinical inputs follow the [ESC HCM Risk-SCD variable definitions](https://www.escardio.org/static-file/Escardio/Guidelines/publications/HCMESC%20HCM-Web%20addenda.pdf). These OMOP pairs are **candidate mappings for input review**, not a validated equivalence catalogue. Review source definitions, timing and units before score calculation. The strict same-day role mask may withhold NSVT/syncope conditions. No record does not establish a negative history. Do not override missingness or use future follow-up to complete baseline inputs. For event exports the same set selects raw source events only; anchor age is not fabricated as a clinical event.
+
+Fixed source sets and the optional age field survive saving/loading and train/test schema freezing. See the [custom-variable tutorial](TABULAR_TUTORIAL.md) for the JSON contract.
 
 ## Category-family consolidation
 
@@ -101,7 +121,7 @@ The initial, explicit MR family maps:
 | 2000001133 | moderate-severe |
 | 3654728 | severe |
 
-The opt-in `core-consolidated` preset emits one `mitral_regurgitation_grade` categorical column instead of the separate MR category source columns. It includes all seven source category concepts even if some occur in fewer than three sites. It selects a uniquely recorded grade on the latest eligible date; conflicting grades remain unknown. It does not collapse trace/intermediate grades, assume absence means no regurgitation, or assign an arbitrary numeric severity score. Unspecified MR (443962) is not assigned a severity. Saved sets carry the versioned family definition.
+The opt-in `shared-grouped` preset emits one `mitral_regurgitation_grade` categorical column instead of the separate MR category source columns. It includes all seven source category concepts even if some occur in fewer than three sites. It selects a uniquely recorded grade on the latest eligible date; conflicting grades remain unknown. It does not collapse trace/intermediate grades, assume absence means no regurgitation, or assign an arbitrary numeric severity score. Unspecified MR (443962) is not assigned a severity. Saved sets carry the versioned family definition.
 
 This is an initial candidate family mapping, not a completed clinical-equivalence catalogue. The conservative same-day condition-role mask still applies, so consolidation alone does not make held baseline-day conditions available. Further families require explicit source-reviewed mappings. Event exports select the family's raw concepts and retain individual events; they do not turn event rows into consolidated snapshot columns. One-hot encoding can be performed downstream with a fixed category schema fitted/declared from training data.
 
@@ -143,11 +163,11 @@ RC4 has no recognised training-index ledger. It has 180 associated-file records 
 ## CLI examples
 
 ```powershell
-omop-exporter export --db OMOP.db --format tabular --cohort "Rennes Training" --vars core --data-dir K:/SMASH_DATA/exports
-omop-exporter export --db OMOP.db --format tabular --cohort "Rennes Test" --variables-file K:/SMASH_DATA/exports/RENNES/train/variable_set.json --data-dir K:/SMASH_DATA/exports
-omop-exporter export --db OMOP.db --format tabular --cohort "Rennes Training" --vars core-measurements --tabular-mode latest-history --lookback-days 365 --history-features previous-value previous-age-days mean --data-dir K:/SMASH_DATA/history-example
-omop-exporter export --db OMOP.db --format tabular --cohort "Tampere Training" --vars core-consolidated --data-dir K:/SMASH_DATA/consolidated-example
-omop-exporter export --db OMOP.db --format events --cohort "Rennes Test" --vars core --event-scope baseline --event-lookback-days 365 --domains measurement observation --include-event-metadata --data-dir K:/SMASH_DATA/exports
-omop-exporter report patients --db OMOP.db --data-dir K:/SMASH_DATA/exports
-omop-exporter report features --db OMOP.db --data-dir K:/SMASH_DATA/exports
+smash-hcm-databank-client export --db OMOP.db --format tabular --cohort "Rennes Training" --vars shared-clinical --data-dir ./analysis
+smash-hcm-databank-client export --db OMOP.db --format tabular --cohort "Rennes Test" --variables-file ./analysis/RENNES/train/variable_set.json --data-dir ./analysis
+smash-hcm-databank-client export --db OMOP.db --format tabular --cohort "Rennes Training" --vars shared-measurements --tabular-mode latest-history --lookback-days 365 --history-features previous-value previous-age-days mean --data-dir ./analysis/history-example
+smash-hcm-databank-client export --db OMOP.db --format tabular --cohort "Tampere Training" --vars shared-grouped --data-dir ./analysis/consolidated-example
+smash-hcm-databank-client export --db OMOP.db --format events --cohort "Rennes Test" --vars shared-clinical --event-scope baseline --event-lookback-days 365 --domains measurement observation --include-event-metadata --data-dir ./analysis
+smash-hcm-databank-client report patients --db OMOP.db --data-dir ./analysis
+smash-hcm-databank-client report features --db OMOP.db --data-dir ./analysis
 ```

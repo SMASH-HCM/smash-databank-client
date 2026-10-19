@@ -2,9 +2,9 @@ import math
 
 import pytest
 
-from omop_exporter.assets import resolve_asset, validate_asset
-from omop_exporter.database import sha256
-from omop_exporter.policies import eligible_history, ensure_disjoint_partitions, numeric_summary, safe_numeric_mean
+from smash_hcm_databank_client.assets import resolve_asset, validate_asset
+from smash_hcm_databank_client.database import sha256
+from smash_hcm_databank_client.policies import eligible_history, ensure_disjoint_partitions, numeric_summary, safe_numeric_mean
 
 
 def test_strict_boundary_lookback_and_missing_dates():

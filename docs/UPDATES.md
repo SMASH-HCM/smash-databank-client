@@ -1,6 +1,6 @@
 # Startup checks and data updates — 0.11
 
-The application and `python -m omop_exporter` share this flow:
+The application and `python -m smash_hcm_databank_client` share this flow:
 
 1. Check fixed SMASH server reachability and discover/check the local database.
 2. If credentials are configured for this session, check authenticated access to the databank. A reachable server is not proof that the account can access the folder. Authentication failures leave local exports/reports and cached files available.

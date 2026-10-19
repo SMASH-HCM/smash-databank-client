@@ -6,9 +6,9 @@ import pytest
 
 def future_export_wide():
     try:
-        from omop_exporter.tabular import export_wide
+        from smash_hcm_databank_client.tabular import export_wide
     except ModuleNotFoundError as exc:
-        if exc.name != "omop_exporter.tabular":
+        if exc.name != "smash_hcm_databank_client.tabular":
             raise RuntimeError("A dependency of the planned exporter is missing") from exc
         raise
     return export_wide

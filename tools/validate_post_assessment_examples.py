@@ -5,11 +5,11 @@ import json
 from pathlib import Path
 
 from validate_release_examples import announce, read_csv, verify_bundle
-from omop_exporter import __version__
-from omop_exporter.database import OmopDatabase, sha256
-from omop_exporter.features import load_variable_set
-from omop_exporter.output import write_csv, write_json
-from omop_exporter.tabular import export_wide
+from smash_hcm_databank_client import __version__
+from smash_hcm_databank_client.database import OmopDatabase, sha256
+from smash_hcm_databank_client.features import load_variable_set
+from smash_hcm_databank_client.output import write_csv, write_json
+from smash_hcm_databank_client.tabular import export_wide
 from datetime import date
 
 

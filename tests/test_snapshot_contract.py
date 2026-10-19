@@ -4,9 +4,9 @@ import sqlite3
 
 import pytest
 
-from omop_exporter.cli import main
-from omop_exporter.database import OmopDatabase
-from omop_exporter.tabular import export_wide
+from smash_hcm_databank_client.cli import main
+from smash_hcm_databank_client.database import OmopDatabase
+from smash_hcm_databank_client.tabular import export_wide
 
 
 def rows(path):

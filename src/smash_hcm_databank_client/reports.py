@@ -51,14 +51,14 @@ def overlap(database):
 
 def summary_report(database, kind):
     if kind == "features":
-        from .features import PRESETS, resolve_variables, selection_spec
+        from .features import PRESETS, resolve_variables, selection_spec, anchor_features
         names = database.concept_names()
         rows, sets = [], []
         for preset, label in PRESETS.items():
             try:
                 keys = resolve_variables(database, preset)
                 _, families = selection_spec(preset)
-                sets.append({"name": preset, "label": label, "source_variable_count": len(keys), "families": families})
+                sets.append({"name": preset, "label": label, "source_variable_count": len(keys), "families": families, "anchor_features": anchor_features(preset)})
                 rows.extend({"set": preset, "table": table, "concept_id": cid, "concept_name": names.get(cid, "")} for table, cid in keys)
             except ValueError as exc:
                 sets.append({"name": preset, "label": label, "unavailable": str(exc)})

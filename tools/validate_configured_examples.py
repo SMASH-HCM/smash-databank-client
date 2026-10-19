@@ -7,13 +7,13 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from omop_exporter import __version__
-from omop_exporter.availability import held_reason
-from omop_exporter.database import OmopDatabase, quote, sha256
-from omop_exporter.datasets import export_dataset
-from omop_exporter.features import resolve_variables
-from omop_exporter.output import write_json
-from omop_exporter.reports import write_data_report
+from smash_hcm_databank_client import __version__
+from smash_hcm_databank_client.availability import held_reason
+from smash_hcm_databank_client.database import OmopDatabase, quote, sha256
+from smash_hcm_databank_client.datasets import export_dataset
+from smash_hcm_databank_client.features import resolve_variables
+from smash_hcm_databank_client.output import write_json
+from smash_hcm_databank_client.reports import write_data_report
 
 
 def read_rows(path):

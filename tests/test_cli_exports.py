@@ -8,17 +8,17 @@ import sys
 
 import pytest
 
-from omop_exporter.cli import main
-from omop_exporter.exports import export_events
-from omop_exporter.output import bundle
+from smash_hcm_databank_client.cli import main
+from smash_hcm_databank_client.exports import export_events
+from smash_hcm_databank_client.output import bundle
 
 
 def test_help_and_installed_metadata_require_no_psycopg():
-    result = subprocess.run([sys.executable, "-m", "omop_exporter", "--help"], capture_output=True, text=True)
+    result = subprocess.run([sys.executable, "-m", "smash_hcm_databank_client", "--help"], capture_output=True, text=True)
     assert result.returncode == 0 and "validate" in result.stdout
-    code = "import omop_exporter.cli,sys; assert 'psycopg' not in sys.modules; assert 'yaml' not in sys.modules"
+    code = "import smash_hcm_databank_client.cli,sys; assert 'psycopg' not in sys.modules; assert 'yaml' not in sys.modules"
     assert subprocess.run([sys.executable, "-c", code], capture_output=True).returncode == 0
-    metadata = importlib.metadata.metadata("omop-exporter")
+    metadata = importlib.metadata.metadata("smash-hcm-databank-client")
     assert all("extra ==" in requirement for requirement in metadata.get_all("Requires-Dist", []))
 
 
@@ -77,7 +77,7 @@ def test_failed_bundle_is_not_published(tmp_path):
 
 
 def test_registry_concepts_excluded_even_with_blank_source(omop_path, tmp_path):
-    from omop_exporter.database import OmopDatabase
+    from smash_hcm_databank_client.database import OmopDatabase
     with sqlite3.connect(omop_path) as connection:
         connection.execute("UPDATE observation SET observation_source_value=NULL")
     with OmopDatabase(omop_path) as database:

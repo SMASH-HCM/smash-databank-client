@@ -4,7 +4,7 @@ The client reads local credentials and makes authenticated HTTPS WebDAV requests
 
 ## 1. Local credentials
 
-The recommended persistent login is `omop-exporter setup` with the optional `secure` extra and native OS credential vault. Session-only and explicit plaintext `.env` storage are also available. Existing `.env` settings remain compatible; setup never automatically migrates or deletes them. Scripted `nextcloud` commands prefer a saved setup profile when no `--env-file` is supplied, otherwise use `.env`. An explicit `--env-file` bypasses the menu profile. Session-only profiles must be set up again in a later process.
+The recommended persistent login is `smash-hcm-databank-client setup` with the optional `secure` extra and native OS credential vault. Session-only and explicit plaintext `.env` storage are also available. Existing `.env` settings remain compatible; setup never automatically migrates or deletes them. Scripted `nextcloud` commands prefer a saved setup profile when no `--env-file` is supplied, otherwise use `.env`. An explicit `--env-file` bypasses the menu profile. Session-only profiles must be set up again in a later process.
 
 For dotenv-based access, put the following in `.env` using your editor:
 
@@ -38,7 +38,7 @@ Use the WebDAV **user root**, with `databank` still supplied separately as the r
 The repository-local environment is already installed for this checkout. Otherwise follow [SETUP.md](SETUP.md).
 
 ```powershell
-.\.venv\Scripts\omop-exporter.exe nextcloud check --env-file .env --remote-root databank
+.\.venv\Scripts\smash-hcm-databank-client.exe nextcloud check --env-file .env --remote-root databank
 ```
 
 This makes a `PROPFIND` request with `Depth: 0` to the configured folder. A successful result reports `PASS` and `HTTPS WebDAV`. No OMOP database is required. Credentials, authorization headers, account IDs and server error bodies are not printed.
@@ -46,7 +46,7 @@ This makes a `PROPFIND` request with `Depth: 0` to the configured folder. A succ
 If a path needs investigation, explicitly request a shallow listing:
 
 ```powershell
-.\.venv\Scripts\omop-exporter.exe nextcloud list --env-file .env --remote-root databank
+.\.venv\Scripts\smash-hcm-databank-client.exe nextcloud list --env-file .env --remote-root databank
 ```
 
 That lists only immediate names/types/sizes; it does not walk the data bank recursively or download its files. Use `--path subfolder` for a folder under the configured root. Folder names and file names are case-sensitive.
@@ -54,7 +54,7 @@ That lists only immediate names/types/sizes; it does not walk the data bank recu
 ## 3. Download README.md
 
 ```powershell
-.\.venv\Scripts\omop-exporter.exe nextcloud download README.md --env-file .env --remote-root databank --out downloads\readme-test
+.\.venv\Scripts\smash-hcm-databank-client.exe nextcloud download README.md --env-file .env --remote-root databank --out downloads\readme-test
 ```
 
 The output directory must be new. It contains the downloaded `README.md` and `download_receipt.json`. The `downloads/` directory is excluded from Git. The client checks remote metadata, uses the remote ETag with `If-Match` where available, stages the transfer, checks byte counts, calculates SHA-256 and publishes only a completed download. It refuses HTML login pages, unsafe relative paths, corrupt/incomplete transfers, unexpected redirects and existing output directories. `download_receipt.json` is reserved for the local receipt and cannot be selected as a remote filename.
@@ -64,7 +64,7 @@ The single-file command's default maximum is **16 MiB**, suitable for this small
 For a trusted expected checksum from your manifest:
 
 ```text
-omop-exporter nextcloud download README.md --env-file .env --remote-root databank --out downloads/readme-verified --sha256 <expected-sha256>
+smash-hcm-databank-client nextcloud download README.md --env-file .env --remote-root databank --out downloads/readme-verified --sha256 <expected-sha256>
 ```
 
 An ETag is a version marker, not an independent content hash. Without `--sha256`, the receipt records a local checksum and `expected_sha256_verified: false`. It does not claim that a trusted release manifest was checked.

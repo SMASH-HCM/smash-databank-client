@@ -4,9 +4,9 @@ import sqlite3
 
 import pytest
 
-from omop_exporter.database import OmopDatabase
-from omop_exporter.exports import export_events
-from omop_exporter.tabular import export_wide as _export_wide
+from smash_hcm_databank_client.database import OmopDatabase
+from smash_hcm_databank_client.exports import export_events
+from smash_hcm_databank_client.tabular import export_wide as _export_wide
 from functools import partial
 
 # This suite retains the explicit historical/as-of contract. Exact-day defaults

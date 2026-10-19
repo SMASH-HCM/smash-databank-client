@@ -2,12 +2,12 @@ import json
 
 import pytest
 
-from omop_exporter.menu import choose
+from smash_hcm_databank_client.menu import choose
 from menu_helpers import dispatch_menu as run_menu
-from omop_exporter.menu_ui import actions, navigate, render_plain, select
-from omop_exporter.nextcloud import NextcloudError
-from omop_exporter.settings import DATA_ACCESS_URL
-from omop_exporter.workspace import Workspace
+from smash_hcm_databank_client.menu_ui import actions, navigate, render_plain, select
+from smash_hcm_databank_client.nextcloud import NextcloudError
+from smash_hcm_databank_client.settings import DATA_ACCESS_URL
+from smash_hcm_databank_client.workspace import Workspace
 
 
 def indexed(workspace):
@@ -19,7 +19,7 @@ def test_prerequisites_change_without_network_or_vault_access(tmp_path, omop_pat
     def forbidden(*args):
         raise AssertionError("Availability must not connect or read vault secrets")
     monkeypatch.setattr(workspace, "client", forbidden)
-    monkeypatch.setattr("omop_exporter.workspace.load_vault", forbidden)
+    monkeypatch.setattr("smash_hcm_databank_client.workspace.load_vault", forbidden)
     current = indexed(workspace)
     assert current["11"].enabled and current["1"].enabled and current["10"].enabled
     assert not current["2"].enabled and not current["5"].enabled and not current["12"].enabled
@@ -62,7 +62,7 @@ def test_disabled_numeric_action_does_not_start_download(tmp_path, monkeypatch):
 
 def test_access_form_opens_only_when_selected(tmp_path, monkeypatch):
     opened = []
-    monkeypatch.setattr("omop_exporter.menu.webbrowser.open", lambda url, new: opened.append(url) or True)
+    monkeypatch.setattr("smash_hcm_databank_client.menu.webbrowser.open", lambda url, new: opened.append(url) or True)
     workspace = Workspace(tmp_path / "state", tmp_path / ".env")
     run_menu(workspace, read=lambda prompt: "0", write=lambda value: None)
     assert not opened
@@ -126,10 +126,10 @@ def test_actual_arrow_keys_skip_disabled_choices(monkeypatch):
 def test_native_windows_console_uses_questionary_even_with_dumb_term(monkeypatch):
     pytest.importorskip("questionary")
     from types import SimpleNamespace
-    from omop_exporter.menu_ui import arrow_ui, console_style
-    monkeypatch.setattr("omop_exporter.menu_ui.sys.platform", "win32")
-    monkeypatch.setattr("omop_exporter.menu_ui.sys.stdin", SimpleNamespace(isatty=lambda: True))
-    monkeypatch.setattr("omop_exporter.menu_ui.sys.stdout", SimpleNamespace(isatty=lambda: True))
+    from smash_hcm_databank_client.menu_ui import arrow_ui, console_style
+    monkeypatch.setattr("smash_hcm_databank_client.menu_ui.sys.platform", "win32")
+    monkeypatch.setattr("smash_hcm_databank_client.menu_ui.sys.stdin", SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr("smash_hcm_databank_client.menu_ui.sys.stdout", SimpleNamespace(isatty=lambda: True))
     monkeypatch.setenv("TERM", "dumb")
     assert arrow_ui()
     assert not arrow_ui(plain=True)

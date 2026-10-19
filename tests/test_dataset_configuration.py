@@ -4,13 +4,13 @@ import sqlite3
 
 import pytest
 
-from omop_exporter.cli import main
-from omop_exporter.database import OmopDatabase
-from omop_exporter.datasets import export_dataset
-from omop_exporter.exports import export_events
-from omop_exporter.features import load_variable_set, resolve_variables
-from omop_exporter.reports import summary_report, write_data_report
-from omop_exporter.tabular import export_wide
+from smash_hcm_databank_client.cli import main
+from smash_hcm_databank_client.database import OmopDatabase
+from smash_hcm_databank_client.datasets import export_dataset
+from smash_hcm_databank_client.exports import export_events
+from smash_hcm_databank_client.features import load_variable_set, resolve_variables
+from smash_hcm_databank_client.reports import summary_report, write_data_report
+from smash_hcm_databank_client.tabular import export_wide
 
 
 def rows(path):
@@ -192,8 +192,8 @@ def test_named_measurement_sets_and_catalogue(database):
 
 @pytest.mark.parametrize("fmt", ["snapshot", "history", "events"])
 def test_menu_configuration_reaches_standard_output(omop_path, tmp_path, fmt):
-    from omop_exporter.local_tools import export_menu
-    from omop_exporter.workspace import Workspace
+    from smash_hcm_databank_client.local_tools import export_menu
+    from smash_hcm_databank_client.workspace import Workspace
     root = tmp_path / "data"
     workspace = Workspace(tmp_path / "state", tmp_path / "absent.env", db_path=omop_path)
     if fmt == "snapshot":

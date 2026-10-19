@@ -3,8 +3,8 @@
 Actual five-item root/submenu navigation is tested separately, using the public
 menu and native Questionary key binding tests.
 """
-from omop_exporter.menu import run_menu
-from omop_exporter.menu_ui import render_plain
+from smash_hcm_databank_client.menu import run_menu
+from smash_hcm_databank_client.menu_ui import render_plain
 
 
 def dispatch_menu(workspace, read, write, **kwargs):

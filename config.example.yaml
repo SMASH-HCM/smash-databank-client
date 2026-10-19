@@ -1,3 +1,3 @@
 # Optional SQLite YAML config: install .[config]. JSON and --db need no extra dependency.
 # Historical PostgreSQL example: config.postgres.example.yaml.
-db: K:/SMASH_DATA/smash-etl/releases/v1.4_rc3/SMASH_OMOP_v1.4_rc3.db
+db: ./data/OMOP.db

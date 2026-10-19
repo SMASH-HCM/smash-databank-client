@@ -3,13 +3,13 @@ from types import SimpleNamespace
 
 import pytest
 
-from omop_exporter import credentials
-from omop_exporter.credentials import load_vault, native_vault, save_env, save_vault
-from omop_exporter.menu import banner, setup
+from smash_hcm_databank_client import credentials
+from smash_hcm_databank_client.credentials import load_vault, native_vault, save_env, save_vault
+from smash_hcm_databank_client.menu import banner, setup
 from menu_helpers import dispatch_menu as run_menu
-from omop_exporter.nextcloud import NextcloudError, read_dotenv
-from omop_exporter.settings import SMASH_URL
-from omop_exporter.workspace import Workspace
+from smash_hcm_databank_client.nextcloud import NextcloudError, read_dotenv
+from smash_hcm_databank_client.settings import SMASH_URL
+from smash_hcm_databank_client.workspace import Workspace
 
 
 def answers(*values):
@@ -22,9 +22,9 @@ def test_banner_has_ascii_smash_url_and_local_version(tmp_path, omop_path):
     output = []
     banner(workspace, output.append)
     rendered = "\n".join(output)
-    assert "SMASH-HCM DATABANK EXPORTER" in rendered
+    assert "SMASH-HCM DATABANK CLIENT" in rendered
     assert SMASH_URL in rendered
-    assert rendered.index("Local OMOP database:") > rendered.index("SMASH-HCM DATABANK EXPORTER")
+    assert rendered.index("Local OMOP database:") > rendered.index("SMASH-HCM DATABANK CLIENT")
     assert "OMOP.db" in rendered
 
 
@@ -41,7 +41,7 @@ def test_menu_missing_manifest_keeps_other_options_available(tmp_path):
 
 
 def test_setup_session_never_persists_password(tmp_path, monkeypatch):
-    monkeypatch.setattr("omop_exporter.menu.native_vault", lambda: None)
+    monkeypatch.setattr("smash_hcm_databank_client.menu.native_vault", lambda: None)
     workspace = Workspace(tmp_path / "state", tmp_path / ".env")
     output = []
     setup(workspace, read=answers("fixture-user", "2"), password_read=answers("fake-password"), write=output.append)
@@ -56,8 +56,8 @@ def test_setup_session_never_persists_password(tmp_path, monkeypatch):
 
 def test_setup_vault_stores_only_reference_in_profile(tmp_path, monkeypatch):
     stored = []
-    monkeypatch.setattr("omop_exporter.menu.native_vault", lambda: None)
-    monkeypatch.setattr("omop_exporter.menu.save_vault", lambda username, password: stored.append((username, password)))
+    monkeypatch.setattr("smash_hcm_databank_client.menu.native_vault", lambda: None)
+    monkeypatch.setattr("smash_hcm_databank_client.menu.save_vault", lambda username, password: stored.append((username, password)))
     workspace = Workspace(tmp_path / "state", tmp_path / ".env")
     setup(workspace, read=answers("fixture", "1"), password_read=answers("fake-password"), write=lambda value: None)
     assert stored == [("fixture", "fake-password")]
@@ -128,12 +128,12 @@ def test_partial_database_can_export_core_events_without_cohort_catalog(tmp_path
 def test_password_prompt_never_falls_back_to_echo(monkeypatch):
     import getpass
     import warnings
-    from omop_exporter.menu import secret_prompt
-    monkeypatch.setattr("omop_exporter.menu.sys.stdin", SimpleNamespace(isatty=lambda: True))
+    from smash_hcm_databank_client.menu import secret_prompt
+    monkeypatch.setattr("smash_hcm_databank_client.menu.sys.stdin", SimpleNamespace(isatty=lambda: True))
     def cannot_hide(prompt):
         warnings.warn("cannot hide", getpass.GetPassWarning)
         raise AssertionError("Unprotected input must not happen")
-    monkeypatch.setattr("omop_exporter.menu.getpass.getpass", cannot_hide)
+    monkeypatch.setattr("smash_hcm_databank_client.menu.getpass.getpass", cannot_hide)
     with pytest.raises(NextcloudError, match="cannot hide"):
         secret_prompt("Password: ")
 
@@ -146,24 +146,24 @@ def test_plaintext_storage_never_writes_public_template(tmp_path):
 
 
 def test_noninteractive_nextcloud_command_uses_saved_vault_profile(tmp_path, monkeypatch, capsys):
-    from omop_exporter.cli import main
+    from smash_hcm_databank_client.cli import main
     workspace = Workspace(tmp_path / "state", tmp_path / "missing.env")
     workspace.state["profile"] = {"username": "fixture", "credential_storage": "vault", "webdav_url": ""}
     workspace.save()
-    monkeypatch.setattr("omop_exporter.workspace.load_vault", lambda username: "fake-password")
-    monkeypatch.setattr("omop_exporter.nextcloud.NextcloudClient.check", lambda self: {"status": "PASS"})
+    monkeypatch.setattr("smash_hcm_databank_client.workspace.load_vault", lambda username: "fake-password")
+    monkeypatch.setattr("smash_hcm_databank_client.nextcloud.NextcloudClient.check", lambda self: {"status": "PASS"})
     assert main(["nextcloud", "check", "--state-dir", str(workspace.root)]) == 0
     assert "fake-password" not in capsys.readouterr().out
 
 
 def test_explicit_dotenv_command_is_independent_of_menu_state(tmp_path, monkeypatch):
-    from omop_exporter.cli import main
+    from smash_hcm_databank_client.cli import main
     state = tmp_path / "state"
     state.mkdir()
     (state / "state.json").write_text("invalid")
     env = tmp_path / ".env"
     env.write_text("NEXTCLOUD_URL=" + SMASH_URL + "\nNEXTCLOUD_USERNAME=fixture\nNEXTCLOUD_PASSWORD=fake-password\nNEXTCLOUD_REMOTE_ROOT=databank")
-    monkeypatch.setattr("omop_exporter.nextcloud.NextcloudClient.check", lambda self: {"status": "PASS"})
+    monkeypatch.setattr("smash_hcm_databank_client.nextcloud.NextcloudClient.check", lambda self: {"status": "PASS"})
     assert main(["nextcloud", "check", "--state-dir", str(state), "--env-file", str(env)]) == 0
 
 

@@ -3,9 +3,9 @@ import sqlite3
 
 import pytest
 
-from omop_exporter.database import OmopDatabase
-from omop_exporter.tabular import export_wide
-from omop_exporter.validation import validate_database
+from smash_hcm_databank_client.database import OmopDatabase
+from smash_hcm_databank_client.tabular import export_wide
+from smash_hcm_databank_client.validation import validate_database
 
 
 def full_layout(path, manifest=True):

@@ -22,8 +22,8 @@ The ETL anchor remains `smash_endpoint_censor.baseline_date/baseline_age`; it is
 `--tabular-mode latest-history --lookback-days <N> --availability-policy strict-before` preserves the historical timing control. Same-day facts are excluded. Strict timing alone does not remove every retrospective administrative/outcome-derived field, so these controls are not automatically model-ready predictors. Match the policy as well as the frozen variable list across train/test exports.
 
 ```powershell
-.\omop-exporter.exe export --db .\SMASH_v1.4_rc4.db --format tabular --cohort "Rennes Training" --vars core --availability-policy post-assessment --out .\rennes-train
-.\omop-exporter.exe export --db .\SMASH_v1.4_rc4.db --format tabular --cohort "Rennes Test" --variables-file .\rennes-train\variable_set.json --availability-policy post-assessment --out .\rennes-test
+.\smash-hcm-databank-client.exe export --db .\SMASH_v1.4_rc4.db --format tabular --cohort "Rennes Training" --vars core --availability-policy post-assessment --out .\rennes-train
+.\smash-hcm-databank-client.exe export --db .\SMASH_v1.4_rc4.db --format tabular --cohort "Rennes Test" --variables-file .\rennes-train\variable_set.json --availability-policy post-assessment --out .\rennes-test
 ```
 
 Event exports remain full history. The CLI rejects an availability-policy option for events to avoid suggesting that a full-history stream has already been cut at baseline. Consumers must apply their prediction-time and intervention masks downstream.

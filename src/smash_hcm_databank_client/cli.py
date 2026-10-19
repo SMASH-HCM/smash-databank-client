@@ -24,7 +24,7 @@ from .validation import validate_database
 
 
 def database_options(parser):
-    parser.add_argument("--db", type=Path, help="Versioned SQLite OMOP database; or set OMOP_EXPORTER_DB")
+    parser.add_argument("--db", type=Path, help="Versioned SQLite OMOP database; or set SMASH_DATABANK_DB")
     parser.add_argument("--config", type=Path, help="JSON configuration (YAML requires the config extra)")
 
 
@@ -42,17 +42,18 @@ def database_path(args):
                 config = json.load(handle)
         if not isinstance(config, dict):
             raise ValueError("Configuration must be an object")
-    path = args.db or os.environ.get("OMOP_EXPORTER_DB") or config.get("db")
+    environment_db = os.environ.get("SMASH_DATABANK_DB") or os.environ.get("OMOP_EXPORTER_DB")
+    path = args.db or environment_db or config.get("db")
     if not path:
-        raise ValueError("Specify --db, OMOP_EXPORTER_DB, or db in a config file")
+        raise ValueError("Specify --db, SMASH_DATABANK_DB, or db in a config file")
     path = Path(path).expanduser()
-    if args.db is None and not os.environ.get("OMOP_EXPORTER_DB") and args.config and not path.is_absolute():
+    if args.db is None and not environment_db and args.config and not path.is_absolute():
         path = args.config.resolve().parent / path
     return path
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Inspect and export a SMASH OMOP SQLite database directly.")
+    parser = argparse.ArgumentParser(prog="smash-hcm-databank-client", description="Download SMASH-HCM databank files, validate local data, and report/export local OMOP datasets.")
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("--plain", action="store_true", help="Use numbered text menus instead of arrow-key navigation")
     commands = parser.add_subparsers(dest="command")
@@ -82,7 +83,8 @@ def main(argv=None):
     database_options(export)
     export.add_argument("--format", choices=("events", "tabular"), default="events")
     selection = export.add_mutually_exclusive_group()
-    selection.add_argument("--vars", choices=tuple(PRESETS), help="Freeze an exact-variable group from the supplied database")
+    from .features import PRESET_ALIASES
+    selection.add_argument("--vars", choices=tuple(PRESETS) + tuple(PRESET_ALIASES), help="Choose a feature set (old names are accepted for existing scripts)")
     selection.add_argument("--variables-file", type=Path, help="Reuse exact table/concept pairs from saved variable-set JSON")
     export.add_argument("--cohort", help="Canonical database cohort name or ID")
     export.add_argument("--availability-policy", choices=POLICIES, help="Tabular prediction-time mask (default post-assessment); strict-before retains the historical comparison. Not valid for full-history events.")
