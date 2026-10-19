@@ -1,0 +1,2 @@
+# Optional native OS credential vault support; install in a local environment.
+.[secure]

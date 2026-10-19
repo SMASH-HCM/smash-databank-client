@@ -1,0 +1,83 @@
+name: Main release candidate
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  identity:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.candidate.outputs.version }}
+      tag: ${{ steps.candidate.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Compute immutable candidate identity
+        id: candidate
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
+        shell: python
+        run: |
+          import os, pathlib, re, sys
+          sys.path.insert(0, os.getcwd())
+          from tools.release_tools import candidate_identity
+          base = re.search(r'^version = "([^"]+)"', pathlib.Path('pyproject.toml').read_text(), re.M).group(1)
+          version, tag = candidate_identity(base, os.environ['RUN_NUMBER'], os.environ['SOURCE_SHA'])
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('version=' + version + '\n' + 'tag=' + tag + '\n')
+  test:
+    needs: identity
+    uses: ./.github/workflows/tests.yml
+    with:
+      ref: ${{ github.sha }}
+  build:
+    needs: [identity, test]
+    uses: ./.github/workflows/binary.yml
+    with:
+      ref: ${{ github.sha }}
+      candidate_version: ${{ needs.identity.outputs.version }}
+  publish:
+    needs: [identity, build]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: smash-hcm-databank-client-*
+          path: release-assets
+          merge-multiple: true
+      - name: Publish tested candidate without changing latest stable
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CANDIDATE_TAG: ${{ needs.identity.outputs.tag }}
+          SOURCE_SHA: ${{ github.sha }}
+        shell: python
+        run: |
+          import json, os, pathlib, subprocess, sys
+          sys.path.insert(0, os.getcwd())
+          from tools.release_tools import verified_assets
+          assets = verified_assets('release-assets')
+          tag, commit = os.environ['CANDIDATE_TAG'], os.environ['SOURCE_SHA']
+          existing = subprocess.run(['gh', 'release', 'view', tag, '--json', 'isDraft,targetCommitish'], capture_output=True, text=True)
+          details = json.loads(existing.stdout) if existing.returncode == 0 else None
+          if details is not None and not details['isDraft']:
+              print('Candidate already exists; preserving its published artifacts.')
+          else:
+              notes = pathlib.Path('candidate-notes.md')
+              notes.write_text('SMASH-HCM Databank Client release candidate\n\nBuilt from main commit ' + commit + '. Tests and native Windows, Linux, Apple Silicon/Intel Mac builds passed before publication.\n\nThis is a testing prerelease; it does not replace the latest stable release. Application data and passwords are excluded. Mac binaries are unsigned/not notarized.\n\nSee docs/UPDATES.md and docs/DATASET_EXPORTS.md for setup, data updates and prediction-time caveats.\n', encoding='utf-8')
+              if details is not None:
+                  if details['targetCommitish'] != commit:
+                      raise SystemExit('Existing draft points to a different source commit')
+                  subprocess.run(['gh', 'release', 'upload', tag, '--clobber'] + [str(p) for p in assets], check=True)
+              else:
+                  subprocess.run(['gh', 'release', 'create', tag, '--target', commit, '--draft', '--prerelease', '--latest=false', '--title', 'SMASH-HCM Databank Client ' + tag, '--notes-file', str(notes)] + [str(p) for p in assets], check=True)
+              subprocess.run(['gh', 'release', 'edit', tag, '--draft=false', '--prerelease', '--latest=false'], check=True)

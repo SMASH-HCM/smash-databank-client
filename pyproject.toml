@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68,<81", "wheel>=0.41"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omop-exporter"
+version = "0.11.0"
+description = "SMASH-HCM Databank Client: downloads, SQLite inspection and reproducible cohort exports"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/SMASH-HCM/smash-hcm-databank-client"
+Repository = "https://github.com/SMASH-HCM/smash-hcm-databank-client"
+Issues = "https://github.com/SMASH-HCM/smash-hcm-databank-client/issues"
+
+[project.optional-dependencies]
+config = ["PyYAML>=6,<7"]
+secure = ["keyring>=25,<26"]
+ui = ["questionary>=2,<3"]
+binary = ["questionary>=2,<3", "keyring>=25,<26", "PyYAML>=6,<7", "pyinstaller>=6,<7"]
+postgres = ["PyYAML>=6,<7", "psycopg[binary]>=3.1,<4"]
+dev = ["pytest>=7.4,<9", "build>=1.2,<2"]
+
+[project.scripts]
+omop-exporter = "omop_exporter.cli:main"
+omop-exporter-legacy = "main:main"
+
+[tool.setuptools]
+py-modules = ["main", "export_omop_tabular", "build_etl_release_data", "build_rolling_landmarks", "build_smash_experiment_data", "build_asset_request_manifest", "build_harmonized_echo_table"]
+
+[tool.setuptools.packages.find]
+include = ["omop_exporter*"]
+
+[tool.setuptools.package-data]
+omop_exporter = ["resources/*.sql", "resources/*.yaml", "resources/*.txt"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+  "integration: read-only tests of an external OMOP database selected with --omop-db",
+  "future: executable contracts for a planned feature (strict expected failure until implemented)",
+]

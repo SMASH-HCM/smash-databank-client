@@ -1,0 +1,120 @@
+name: Portable application
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit/tag to build (blank uses selected branch)
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+      candidate_version:
+        required: false
+        default: ''
+        type: string
+permissions:
+  contents: read
+jobs:
+  binary:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-22.04, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Set CI candidate version
+        if: inputs.candidate_version != ''
+        env:
+          CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+        shell: python
+        run: |
+          import os, sys
+          sys.path.insert(0, os.getcwd())
+          from tools.release_tools import set_candidate_version
+          set_candidate_version('.', os.environ['CANDIDATE_VERSION'])
+      - run: python -m pip install -e ".[binary,dev]"
+      - run: python -m pytest tests -m "not integration"
+      - run: python tools/build_binary.py
+      - name: Smoke test frozen application outside checkout
+        shell: python
+        run: |
+          import pathlib, subprocess, tempfile, sys
+          executable = next(pathlib.Path('dist/binary').glob('*/omop-exporter.exe' if sys.platform == 'win32' else '*/omop-exporter')).resolve()
+          with tempfile.TemporaryDirectory() as directory:
+              subprocess.run([str(executable), '--version'], cwd=directory, check=True)
+              subprocess.run([str(executable), '--help'], cwd=directory, check=True)
+              result = subprocess.run([str(executable), 'doctor'], cwd=directory, text=True, capture_output=True, check=True)
+              import json
+              details = json.loads(result.stdout)
+              assert details['frozen'] and all(details['libraries'].values())
+              if sys.platform == 'win32':
+                  assert details['native_vault'].startswith('keyring.backends.Windows.')
+              result = subprocess.run([str(executable), 'menu', '--state-dir', str(pathlib.Path(directory) / 'state'), '--plain'], cwd=directory, input='0\n', text=True, capture_output=True, check=True)
+              assert 'SMASH-HCM DATABANK EXPORTER' in result.stdout
+              assert '[NO]' in result.stdout and '<unset>' in result.stdout
+              assert 'Local OMOP' in result.stdout
+              assert 'Data Access Request' in result.stdout
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smash-hcm-databank-client-${{ matrix.os }}
+          if-no-files-found: error
+          path: |
+            dist/binary/*.zip
+            dist/binary/*.zip.sha256
+  python-package:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Set CI candidate version
+        if: inputs.candidate_version != ''
+        env:
+          CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+        shell: python
+        run: |
+          import os, sys
+          sys.path.insert(0, os.getcwd())
+          from tools.release_tools import set_candidate_version
+          set_candidate_version('.', os.environ['CANDIDATE_VERSION'])
+      - run: python -m pip install -e ".[dev,ui]"
+      - run: python -m pytest tests -m "not integration"
+      - run: python -m build
+      - name: Wheel smoke test outside checkout
+        shell: python
+        run: |
+          import pathlib, subprocess, tempfile, sys, venv
+          wheel = next(pathlib.Path('dist').glob('*.whl')).resolve()
+          with tempfile.TemporaryDirectory() as directory:
+              root = pathlib.Path(directory)
+              venv.create(root / 'venv', with_pip=True)
+              python = root / 'venv/bin/python'
+              subprocess.run([str(python), '-m', 'pip', 'install', '--no-deps', str(wheel)], check=True)
+              subprocess.run([str(python), '-m', 'omop_exporter', '--version'], cwd=root, check=True)
+              subprocess.run([str(python), '-m', 'omop_exporter', '--help'], cwd=root, check=True)
+      - name: Python package checksums
+        shell: python
+        run: |
+          import hashlib, pathlib
+          for path in pathlib.Path('dist').iterdir():
+              if path.suffix == '.whl' or path.name.endswith('.tar.gz'):
+                  path.with_name(path.name + '.sha256').write_text(hashlib.sha256(path.read_bytes()).hexdigest() + '  ' + path.name + '\n')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smash-hcm-databank-client-python
+          if-no-files-found: error
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/*.sha256

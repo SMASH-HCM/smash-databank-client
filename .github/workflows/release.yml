@@ -1,0 +1,70 @@
+name: Prepare draft release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing pushed version tag, e.g. v0.11.0
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  check-tag:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Verify immutable build reference and version
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          python3 - <<'PY'
+          import os, re, subprocess
+          from pathlib import Path
+          tag = os.environ['RELEASE_TAG']
+          if not re.fullmatch(r'v\d+\.\d+\.\d+', tag):
+              raise SystemExit('Use an existing vMAJOR.MINOR.PATCH tag')
+          subprocess.run(['git', 'show-ref', '--verify', 'refs/tags/' + tag], check=True)
+          version = re.search(r'^version = "([^"]+)"', Path('pyproject.toml').read_text(), re.M).group(1)
+          if tag != 'v' + version:
+              raise SystemExit('Tag does not match the package version')
+          PY
+  build:
+    needs: check-tag
+    uses: ./.github/workflows/binary.yml
+    with:
+      ref: ${{ inputs.tag }}
+  draft:
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: smash-hcm-databank-client-*
+          path: release-assets
+          merge-multiple: true
+      - name: Create draft with verified assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        shell: python
+        run: |
+          import os, pathlib, subprocess, sys
+          sys.path.insert(0, os.getcwd())
+          from tools.release_tools import verified_assets
+          tag = os.environ['RELEASE_TAG']
+          assets = verified_assets('release-assets')
+          existing = subprocess.run(['gh', 'release', 'view', tag, '--json', 'isDraft'], capture_output=True, text=True)
+          if existing.returncode == 0:
+              raise SystemExit('Release already exists; review it manually instead of overwriting assets')
+          notes = pathlib.Path('release-notes.md')
+          notes.write_text('SMASH-HCM Databank client ' + tag + '\n\nIncludes Windows, Linux, macOS Apple Silicon/Intel bundles, Python wheel/source distribution and checksums.\n\nStartup authenticates configured databank access and offers a data-update check. Archive/keep/replace requires explicit selection; old files are retired only after verified downloads.\n\nNo clinical data or credentials are included. macOS bundles are unsigned and not notarized. Review the guide and release assets before publishing.\n')
+          subprocess.run(['gh', 'release', 'create', tag, '--verify-tag', '--draft', '--prerelease', '--title', 'SMASH-HCM Databank client ' + tag, '--notes-file', str(notes)] + [str(p) for p in assets], check=True)

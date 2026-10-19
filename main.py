@@ -9,14 +9,21 @@ import subprocess
 import sys
 from pathlib import Path
 
-import yaml
+from importlib import resources
 
 
 ROOT = Path(__file__).resolve().parent
+SQL_PATH = ROOT / "export_smash_omop.sql"
+if not SQL_PATH.is_file():
+    SQL_PATH = resources.files("omop_exporter").joinpath("resources/legacy_export.sql")
 COPY_RE = re.compile(r"COPY\s*\((.*?)\)\s*TO\s*'/out/([^']+)'\s*WITH\s*\(FORMAT CSV, HEADER TRUE\);", re.I | re.S)
 
 
 def read_config(path):
+    try:
+        import yaml
+    except ImportError:
+        raise ValueError('Legacy YAML configuration requires the optional installation: pip install ".[postgres]"') from None
     config = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(config, dict):
         raise ValueError("Configuration must be a mapping")
@@ -31,7 +38,7 @@ def connection_args(config):
 
 
 def run_python(script, *arguments):
-    subprocess.run([sys.executable, str(ROOT / script), *map(str, arguments)], check=True)
+    subprocess.run([sys.executable, "-m", Path(script).stem, *map(str, arguments)], check=True)
 
 
 def restore(config):
@@ -61,7 +68,7 @@ def export(config):
 
     output = Path(config["output_dir"]).expanduser().resolve()
     output.mkdir(parents=True, exist_ok=True)
-    statements = COPY_RE.findall((ROOT / "export_smash_omop.sql").read_text(encoding="utf-8"))
+    statements = COPY_RE.findall(SQL_PATH.read_text(encoding="utf-8"))
     if len(statements) != 7:
         raise ValueError("Expected seven versioned COPY statements in export_smash_omop.sql")
     with psycopg.connect(**connection_args(config)) as con:
@@ -76,7 +83,7 @@ def export(config):
                 print(destination)
     dump = Path(config["dump"]).expanduser()
     metadata = {"dump": str(dump), "dump_sha256": None, "export_sql_sha256":
-                hashlib.sha256((ROOT / "export_smash_omop.sql").read_bytes()).hexdigest()}
+                hashlib.sha256(SQL_PATH.read_bytes()).hexdigest()}
     if dump.is_file() and config.get("hash_dump", False):
         digest = hashlib.sha256()
         with dump.open("rb") as handle:
@@ -129,7 +136,7 @@ def assets(config):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("restore", "export", "prepare", "tabular", "assets", "all"))
-    parser.add_argument("--config", type=Path, default=ROOT / "config.example.yaml")
+    parser.add_argument("--config", type=Path, required=True, help="Explicit legacy PostgreSQL YAML config")
     args = parser.parse_args()
     config = read_config(args.config)
     if args.command == "restore":

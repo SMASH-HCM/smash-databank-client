@@ -1,0 +1,8 @@
+include README.md config.example.json config.example.yaml config.postgres.example.yaml export_smash_omop.sql
+include .env.example
+include manifest.example.json
+include requirements*.txt
+recursive-include docs *.md
+include docs/reviews/2026-10-13/v1.4rc3-audit.json
+recursive-include tests *.py
+recursive-include tools *.py

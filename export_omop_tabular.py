@@ -112,7 +112,9 @@ def main():
                 latest_age = max(float(event["patient_age_at_event_years"]) for event in group)
                 latest = [event for event in group if float(event["patient_age_at_event_years"]) == latest_age]
                 units = {event["unit_concept_id"] for event in group if event["unit_concept_id"] not in ("", "0")}
-                unit_conflict = len(units) > 1
+                numeric_events = [event for event in group if event["value_as_number"]]
+                unknown_numeric_unit = any(event["unit_concept_id"] in ("", "0") for event in numeric_events)
+                unit_conflict = len(units) > 1 or bool(units and unknown_numeric_unit)
                 numeric = [float(event["value_as_number"]) for event in group if event["value_as_number"]]
                 latest_numeric = [float(event["value_as_number"]) for event in latest if event["value_as_number"]]
                 latest_categories = {event["value_as_concept_id"] for event in latest if event["value_as_concept_id"] not in ("", "0")}
@@ -124,8 +126,8 @@ def main():
                     "domain": domain, "concept_id": concept_id, "event_count": len(group),
                     "latest_event_age_years": f"{latest_age:.4f}",
                     "years_since_latest": f"{landmark - latest_age:.4f}",
-                    "latest_numeric_mean": sum(latest_numeric) / len(latest_numeric) if latest_numeric and not unit_conflict else "",
-                    "window_numeric_mean": sum(numeric) / len(numeric) if numeric and not unit_conflict else "",
+                    "latest_numeric_mean": sum(latest_numeric) / len(latest_numeric) if latest_numeric and not unit_conflict and not unknown_numeric_unit else "",
+                    "window_numeric_mean": sum(numeric) / len(numeric) if numeric and not unit_conflict and not unknown_numeric_unit else "",
                     "latest_value_as_concept_id": next(iter(latest_categories)) if len(latest_categories) == 1 else "",
                     "unit_concept_id": next(iter(units)) if len(units) == 1 else "",
                     "unit_conflict": int(unit_conflict),

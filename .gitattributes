@@ -1,0 +1,2 @@
+# Preserve the supplied terminal artwork, including its intentional padding.
+omop_exporter/resources/smashhcm-logo.txt -text -whitespace

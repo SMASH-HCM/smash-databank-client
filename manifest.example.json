@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "release": "example",
+  "files": [
+    {
+      "path": "README.md",
+      "size_bytes": 586,
+      "sha256": "9cb38b348beb23f7094dd8956995d36257dcbe1d9325468a8114208f6776b468",
+      "kind": "documentation"
+    }
+  ]
+}

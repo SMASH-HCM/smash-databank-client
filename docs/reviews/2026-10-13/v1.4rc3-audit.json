@@ -1,0 +1,328 @@
+{
+  "reviewed_utc": "2026-10-13T17:25:27.976273+00:00",
+  "repo_commit": "427cbc1",
+  "database": "K:\\SMASH_DATA\\smash-etl\\releases\\v1.4_rc3\\SMASH_OMOP_v1.4_rc3.db",
+  "database_size_bytes": 335187968,
+  "database_sha256": "6a00744b13b2e518f9ea8974c47ec25b08530da4af8f7ec70a2a9e4f49f21fba",
+  "expected_sha256": "6a00744b13b2e518f9ea8974c47ec25b08530da4af8f7ec70a2a9e4f49f21fba",
+  "hash_matches_external_build_manifest": true,
+  "main_file_size_and_mtime_stable_during_audit": true,
+  "external_build_manifest": "K:\\SMASH_DATA\\smash-etl\\reports\\v1.4_medications_2026-10-13\\build_manifest.json",
+  "sqlite_version_used_for_review": "3.32.3",
+  "journal_mode": "wal",
+  "wal_size_bytes": 0,
+  "integrity_check": [
+    "ok"
+  ],
+  "table_and_view_counts": {
+    "care_site": 0,
+    "cdm_source": 0,
+    "cohort": 0,
+    "cohort_definition": 0,
+    "concept": 304,
+    "concept_ancestor": 0,
+    "concept_class": 0,
+    "concept_relationship": 0,
+    "concept_synonym": 0,
+    "condition_era": 0,
+    "condition_occurrence": 41080,
+    "cost": 0,
+    "death": 383,
+    "device_exposure": 0,
+    "domain": 0,
+    "dose_era": 0,
+    "drug_era": 0,
+    "drug_exposure": 1447,
+    "episode": 0,
+    "episode_event": 0,
+    "fact_relationship": 0,
+    "location": 0,
+    "measurement": 580588,
+    "metadata": 188989,
+    "note": 0,
+    "note_nlp": 0,
+    "observation": 53015,
+    "observation_period": 2978,
+    "payer_plan_period": 0,
+    "person": 2984,
+    "procedure_occurrence": 48313,
+    "provider": 0,
+    "relationship": 0,
+    "smash_fact_provenance": 919777,
+    "smash_medication_class_evidence": 11907,
+    "smash_medication_class_features": 13367,
+    "smash_release_metadata": 1,
+    "specimen": 0,
+    "visit_detail": 0,
+    "visit_occurrence": 0,
+    "vocabulary": 0
+  },
+  "site_person_counts": {
+    "FLORENCE": 2682,
+    "RENNES": 201,
+    "TAMPERE": 101
+  },
+  "site_person_provenance": [
+    {
+      "site": "FLORENCE",
+      "rows": 2682,
+      "patients": 2682
+    },
+    {
+      "site": "RENNES",
+      "rows": 201,
+      "patients": 201
+    },
+    {
+      "site": "TAMPERE",
+      "rows": 101,
+      "patients": 101
+    }
+  ],
+  "duplicate_fact_provenance_keys": 0,
+  "release_identity": {
+    "release": "v1.4_rc3",
+    "generated_utc": "2026-10-13T15:42:22.288552+00:00",
+    "scope": "paired clinical CSV mappings; no PostgreSQL results/endpoint ledgers or separately ingested imaging assets"
+  },
+  "absent_required_study_tables": [
+    "smash_endpoint_event",
+    "smash_endpoint_censor",
+    "image_occurrence"
+  ],
+  "exact_overlap_definition": "Distinct (OMOP fact table, target concept_id), concept_id > 0, full history, exclude local cohort-management concepts; no clinical-equivalence or baseline-coverage claim. Demographics/death/custom class features outside these counts.",
+  "exact_site_presence_groups": {
+    "FLORENCE": 136,
+    "FLORENCE|RENNES": 21,
+    "FLORENCE|RENNES|TAMPERE": 31,
+    "FLORENCE|TAMPERE": 13,
+    "RENNES": 24,
+    "RENNES|TAMPERE": 2,
+    "TAMPERE": 21
+  },
+  "three_site_core_candidates": [
+    {
+      "table": "condition_occurrence",
+      "concept_id": 320128,
+      "concept_name": "Essential hypertension"
+    },
+    {
+      "table": "condition_occurrence",
+      "concept_id": 3654726,
+      "concept_name": "Mild mitral valve regurgitation"
+    },
+    {
+      "table": "condition_occurrence",
+      "concept_id": 3654727,
+      "concept_name": "Moderate mitral valve regurgitation"
+    },
+    {
+      "table": "condition_occurrence",
+      "concept_id": 4218343,
+      "concept_name": "Systolic anterior movement of mitral valve"
+    },
+    {
+      "table": "condition_occurrence",
+      "concept_id": 4275423,
+      "concept_name": "Supraventricular tachycardia"
+    },
+    {
+      "table": "condition_occurrence",
+      "concept_id": 40480274,
+      "concept_name": "Nonsustained ventricular tachycardia"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 607590,
+      "concept_name": "Body height"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 1002373,
+      "concept_name": "Power level --peak during exercise"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 3011096,
+      "concept_name": "Left ventricular posterior wall Thickness during diastole by US"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 3014260,
+      "concept_name": "Left ventricular Internal diameter minor axis diastole by US"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 3021917,
+      "concept_name": "Interventricular septum Thickness during diastole by US"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 3026578,
+      "concept_name": "Left ventricular outflow tract Maximum pressure gradient dur systole by US.doppler"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 4005525,
+      "concept_name": "Troponin T measurement"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 4099154,
+      "concept_name": "Body weight"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 4108582,
+      "concept_name": "Left ventricular ejection fraction"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 4152194,
+      "concept_name": "Systolic blood pressure"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 4154790,
+      "concept_name": "Diastolic blood pressure"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 4181005,
+      "concept_name": "Maximum heart rate achieved during course of procedure"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 4189511,
+      "concept_name": "N terminal pro-brain natriuretic peptide level"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 4201235,
+      "concept_name": "Body surface area"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 4245997,
+      "concept_name": "Body mass index"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 21490991,
+      "concept_name": "Mitral valve medial annulus Tissue velocity.E-wave.max by US.tissue doppler"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 21491101,
+      "concept_name": "Mitral valve lateral annulus Tissue velocity.E-wave.max by US.tissue doppler"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 21492071,
+      "concept_name": "Mitral valve medial annulus E-wave/Tissue velocity.E-wave.max by US.doppler+tissue doppler"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 21492072,
+      "concept_name": "Mitral valve lateral annulus E-wave/Tissue velocity.E-wave.max by US.doppler+tissue doppler"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 21494310,
+      "concept_name": "Mitral valve Maximum A-wave velocity by US.doppler"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 21494314,
+      "concept_name": "Mitral valve Maximum E-wave velocity by US.doppler"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 35621756,
+      "concept_name": "New York Heart Association Classification class"
+    },
+    {
+      "table": "measurement",
+      "concept_id": 46236797,
+      "concept_name": "Tricuspid valve annulus Excursion distance during systole by US.M-mode"
+    },
+    {
+      "table": "observation",
+      "concept_id": 3021806,
+      "concept_name": "History of Medication use"
+    },
+    {
+      "table": "procedure_occurrence",
+      "concept_id": 4230911,
+      "concept_name": "Echocardiography"
+    }
+  ],
+  "blank_source_fields": {
+    "measurement": {
+      "total_rows": 580588,
+      "blank_source_value_rows": 426984
+    },
+    "observation": {
+      "total_rows": 53015,
+      "blank_source_value_rows": 14745
+    },
+    "condition_occurrence": {
+      "total_rows": 41080,
+      "blank_source_value_rows": 24996
+    },
+    "procedure_occurrence": {
+      "total_rows": 48313,
+      "blank_source_value_rows": 325
+    }
+  },
+  "measurement_numeric_unit_coverage": [
+    {
+      "site": "FLORENCE",
+      "numeric_rows": 558364,
+      "missing_standard_unit_rows": 27367,
+      "missing_standard_unit_with_source_text_rows": 9554
+    },
+    {
+      "site": "RENNES",
+      "numeric_rows": 10286,
+      "missing_standard_unit_rows": 201,
+      "missing_standard_unit_with_source_text_rows": 0
+    },
+    {
+      "site": "TAMPERE",
+      "numeric_rows": 8993,
+      "missing_standard_unit_rows": 1443,
+      "missing_standard_unit_with_source_text_rows": 318
+    }
+  ],
+  "legacy_cohort_sidecar": {
+    "path": "F:\\Projects\\SMASH-HCM\\WP2\\cohorts\\cohorts_SMASH_v1.4_splits.csv",
+    "row_count": 2984,
+    "split_counts": {
+      "RENNES-TEST": 40,
+      "RENNES-TRAIN": 161,
+      "SHARE-PILOT": 537,
+      "SHARE-TRAIN": 2145,
+      "TAMPERE-PILOT": 27,
+      "TAMPERE-TRAIN": 74
+    },
+    "release_binding_verified": false
+  },
+  "verification_limits": [
+    "No PostgreSQL end-to-end export executed.",
+    "Default Python lacks PyYAML; main.py --help failed before argument parsing.",
+    "Seven exporter Python scripts passed syntax parsing; no committed tests or package configuration exist.",
+    "Asset bundle availability and Nextcloud permissions were not validated; no release-bound asset manifest was found in reviewed inputs.",
+    "No patient-level output written by this review."
+  ],
+  "synthetic_sparse_export_smoke_test": {
+    "strict_boundary_excluded_same_day_and_future": true,
+    "input_people": 2,
+    "people_in_sparse_output": 1,
+    "known_unit_value": 10,
+    "unknown_unit_value": 100,
+    "actual_window_mean": 55.0,
+    "actual_unit_conflict_flag": 0,
+    "known_and_unknown_unit_values_mixed": true
+  }
+}

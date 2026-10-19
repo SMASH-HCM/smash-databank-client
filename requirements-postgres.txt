@@ -1,0 +1,2 @@
+# Optional, historical PostgreSQL workflow only. Install in a local environment.
+.[postgres]
