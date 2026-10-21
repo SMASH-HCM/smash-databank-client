@@ -39,7 +39,8 @@ def actions(workspace):
             manifest_reason = "Retrieve or load a valid manifest first"
     login_reason = "" if login else "Set up a login first"
     database = workspace.database_available()
-    db_reason = "" if database else "Download or select a local database first"
+    artifact_reason = "" if database else "Download or select a local database first"
+    db_reason = "PostgreSQL dump available; restore into PostgreSQL and use the optional PostgreSQL analysis workflow" if database and workspace.database_is_dump() else artifact_reason
     download_reason = manifest_reason or login_reason
     def available(category, reason):
         return download_reason or ("" if any(artifact_type(item) == category and (category == "database" or item["cohorts"]) for item in manifest["files"]) else reason)
@@ -57,7 +58,7 @@ def actions(workspace):
         Action("19", "View / save summary reports", "Local OMOP", db_reason),
         Action("20", "Create / reuse variable sets", "Local OMOP", db_reason),
         Action("4", "Validate downloaded files", "Validate", "" if workspace.state["downloads"] else "Download some files first"),
-        Action("12", "Validate local OMOP database", "Validate", db_reason),
+        Action("12", "Validate local OMOP database", "Validate", artifact_reason),
         Action("18", "Validate an existing folder against manifest", "Validate", manifest_reason),
         Action("10", "Load / validate a local manifest", "Validate"),
         Action("8", "Select a local OMOP database", "Validate"),

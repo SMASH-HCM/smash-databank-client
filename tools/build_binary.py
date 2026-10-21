@@ -42,6 +42,9 @@ def build(output):
     # Explicit public allowlist: never collect the checkout, .env or local state.
     for filename in ("README.md", "manifest.example.json"):
         shutil.copy2(ROOT / filename, release / filename)
+    dump_guide = release / "docs/POSTGRES_DUMPS.md"
+    dump_guide.parent.mkdir(exist_ok=True)
+    shutil.copy2(ROOT / "docs/POSTGRES_DUMPS.md", dump_guide)
     for filename in ("README.md", "MENU.md", "NEXTCLOUD.md", "BINARY_RELEASES.md", "LOCAL_OMOP.md", "BASELINE_AVAILABILITY.md", "DATABASE_CONTRACT.md", "DATASET_EXPORTS.md", "TABULAR_TUTORIAL.md", "MULTIMODAL_TUTORIAL.md", "INDEXING_AND_LANDMARKS.md", "UPDATES.md", "SETUP.md", "GITHUB_RELEASE.md", "TESTING.md", "STATUS_AND_IMPLEMENTATION_PLAN.md", "LEGACY_POSTGRES_WORKFLOW.md", "EXPORT_METHODOLOGY.md", "RC4_VALIDATION_2026-10-18.md", "RC4_DATABASE_AGENT_FEEDBACK_2026-10-18.md", "RC4_FORMAT_CHANGE_2026-10-19.md"):
         destination = release / "docs" / filename
         destination.parent.mkdir(exist_ok=True)

@@ -1,5 +1,7 @@
 # Local OMOP reports and datasets
 
+**Current release format:** the published SMASH `.db` is a PostgreSQL dump. Downloading and validating it does not enable these direct-file analysis menus. Use [POSTGRES_DUMPS.md](POSTGRES_DUMPS.md) for recognition, integrity validation and the separate restore/PostgreSQL analysis workflow. The menus and examples below describe the earlier SQLite snapshot adapter; full modern menu parity on PostgreSQL is not yet implemented.
+
 Open **3. Local OMOP** after downloading or selecting a database. This section works without a login, internet connection or remote manifest. It is greyed out unless the selected SQLite file is readable and contains an OMOP `person.person_id` column. A corrupted/non-OMOP `.db` file does not enable it.
 
 At startup the app rechecks its selected database. If unavailable, it checks registered download receipts and the confirmed download folder at the fixed release/artifact depths (at most two subdirectories). A single readable OMOP database is selected and remembered. Full ETL `results__cohort` tables are resolved using the embedded `smash_export_metadata` schema map; ordinary duplicate table names still fail as ambiguous. Multiple candidates require **Validate → Select a local OMOP database**; no version is silently preferred. Unrelated drives and project folders are not searched. You can also launch `smash-hcm-databank-client.exe menu --db <path>`.

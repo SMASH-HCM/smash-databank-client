@@ -184,7 +184,7 @@ def test_missing_manifest_is_not_reported_as_failed_connection(tmp_path, monkeyp
     assert server.calls == ["check"]
     assert state.connection_status is True
     assert any("Manifest: NOT AVAILABLE (HTTP 404) at /databank/manifest.json" in line for line in output)
-    assert any("Connection: PASS (verified HTTPS WebDAV)" in line for line in output)
+    assert any("Connection: SUCCESS (verified HTTPS WebDAV)" in line for line in output)
     assert not any("Could not complete" in line for line in output)
     assert not state.state["manifest_path"]
 

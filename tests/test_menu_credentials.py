@@ -111,7 +111,7 @@ def test_menu_connection_uses_injected_client_and_no_secret_output(tmp_path, mon
     monkeypatch.setattr(workspace, "client", lambda: SimpleNamespace(check=lambda: {"status": "PASS"}))
     output = []
     assert run_menu(workspace, read=answers("2", "0"), write=output.append) == 0
-    assert any("Connection: PASS" in line for line in output)
+    assert any("Connection: SUCCESS" in line for line in output)
 
 
 def test_partial_database_can_export_core_events_without_cohort_catalog(tmp_path, omop_path):

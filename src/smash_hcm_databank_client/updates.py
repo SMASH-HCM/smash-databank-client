@@ -152,17 +152,13 @@ def apply_update(workspace, candidate, retention="archive", progress=None):
 
 def check_updates(workspace, read=input, write=print, plain=False):
     """Called only after authenticated root access and a positive Y/N response."""
-    write("Checking the databank manifest...")
-    with DownloadProgress("manifest.json", write) as progress:
-        refreshed = refresh_manifest(workspace, progress)
-    write("Manifest: " + refreshed["status"] + " | " + text(refreshed["manifest"]["release"]))
+    # Keep this small catalogue check quiet; data files retain full progress.
+    refreshed = refresh_manifest(workspace)
+    write("Checking Databank manifest ... SUCCESS" + ("" if refreshed["status"] == "UNCHANGED" else " | " + refreshed["status"] + " | " + text(refreshed["manifest"]["release"])))
     if workspace.manifest_copy_notice:
         write(workspace.manifest_copy_notice)
-    elif workspace.state["download_root"]:
-        write("Manifest saved: " + text(Path(workspace.state["download_root"]) / "manifest.json"))
     candidates = update_candidates(workspace)
     if not candidates:
-        write("No updates to tracked downloads. New catalogue files are available through Download.")
         return []
     write("Updates/repairs available: " + str(len(candidates)) + ". Detection compares publisher checksums and file presence/size; use Validate for a full local hash check.")
     selected = choose_many(candidates, lambda item: item["entry"]["path"] + " | " + item["reason"] + " | " + size_label(item["entry"]["size_bytes"]), read, write, plain, message="Choose updated files to download (cancel keeps current versions)")
@@ -186,12 +182,12 @@ def check_updates(workspace, read=input, write=print, plain=False):
     return results
 
 
-def startup_updates(workspace, read=input, write=print, plain=False):
-    if any(item.get("status") in ("update-pending", "replacement-verified-pending-delete") for item in workspace.state["download_history"]):
-        write("An earlier update was interrupted. Old-version paths remain in local version history; no automatic cleanup will delete them.")
+def check_login(workspace, write=print):
+    """Check configured authentication before rendering status or asking updates."""
     if not workspace.login_configured():
         write("Databank login is not configured for this session; use Setup. Local tools remain available.")
-        return
+        workspace.connection_status = None
+        return False
     try:
         write("Checking configured login and databank access...")
         workspace.connection_status = False
@@ -202,10 +198,20 @@ def startup_updates(workspace, read=input, write=print, plain=False):
         if result.get("status") != "PASS":
             raise NextcloudError("Databank access check did not pass")
         workspace.connection_status = True
-        write("Login and databank access: PASS")
+        write("Login and databank access: SUCCESS")
     except (OSError, ValueError):
         # Avoid reporting connector exceptions containing server/account details.
         write("Databank login/access check failed. Review Setup or retry later; local tools and cached downloads remain available.")
+        return False
+    return True
+
+
+def startup_updates(workspace, read=input, write=print, plain=False, login_checked=False):
+    if any(item.get("status") in ("update-pending", "replacement-verified-pending-delete") for item in workspace.state["download_history"]):
+        write("An earlier update was interrupted. Old-version paths remain in local version history; no automatic cleanup will delete them.")
+    if not login_checked:
+        check_login(workspace, write)
+    if workspace.connection_status is not True:
         return
     if not confirm("Check for data updates now?", read, write, plain, default=True):
         return

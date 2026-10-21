@@ -19,7 +19,7 @@ def message_level(message):
         return "failure" if int(summary[2]) else "success"
     if re.search(r"\bFAIL(?:ED|URE)?\b", message, re.I) or message.startswith(("Could not", "Error:", "Update incomplete:")):
         return "failure"
-    if re.match(r"(?:PASS|SUCCESS|CACHED|DOWNLOADED)\b", message) or message.startswith((
+    if re.search(r"\bSUCCESS\b", message) or re.match(r"(?:PASS|CACHED|DOWNLOADED)\b", message) or message.startswith((
         "Connection: PASS", "Login and databank access: PASS", "Database validation: PASS", "Manifest ready:", "Manifest saved:",
         "Manifest: FIRST", "Manifest: UPDATED", "Manifest: UNCHANGED", "Update complete:", "Downloaded/available:",
         "Local OMOP database selected.", "Variable set saved:", "Report saved:", "Dataset saved:", "Export complete:",

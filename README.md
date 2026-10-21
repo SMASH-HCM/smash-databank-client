@@ -1,12 +1,12 @@
 # SMASH-HCM Databank Client
 
-Download SMASH-HCM research data, inspect a local OMOP database, and export reproducible datasets for modelling. Use the arrow-key menu for occasional work, or the command line for repeatable exports.
+Download SMASH-HCM research data and validate the published PostgreSQL OMOP dump, ready-made datasets and cohort ZIPs. Use the arrow-key menu for occasional work. Analysis of a PostgreSQL dump requires restoration into PostgreSQL; see the [dump and analysis guide](docs/POSTGRES_DUMPS.md).
 
 **[Download the client](https://github.com/SMASH-HCM/smash-hcm-databank-client/releases)** · **[Request data access](https://forms.gle/nNDDBbX8ah15dNcs8)** · **[Documentation](docs/README.md)**
 
 ## What is the SMASH-HCM databank?
 
-The databank brings together harmonized hypertrophic cardiomyopathy data from **FLORENCE, RENNES and TAMPERE**. A versioned **OMOP SQLite database** contains clinical records and, where supplied by the release, cohort memberships, baseline anchors, endpoints and links to external assets. Larger data such as ECG signals, MRI and Echo files are distributed separately, often as cohort/modality ZIPs. Raw and processed representations may both be published; availability depends on the release.
+The databank brings together harmonized hypertrophic cardiomyopathy data from **FLORENCE, RENNES and TAMPERE**. A versioned **PostgreSQL OMOP dump** (distributed with a `.db` filename) contains clinical records and, where supplied by the release, cohort memberships, baseline anchors, endpoints and links to external assets. Larger data such as ECG signals, MRI and Echo files are distributed separately, often as cohort/modality ZIPs. Raw and processed representations may both be published; availability depends on the release.
 
 **TODO: URL for the SMASH-HCM Databank paper.** No manuscript is bundled with the client yet. Cite the exact data release and client version used in an analysis alongside the paper when available.
 
@@ -27,11 +27,11 @@ The client connects to the [SMASH-HCM server](https://smash-hcm.ucd.ie); the sha
    | Linux x64 | `linux-x86_64.zip` |
 
 3. Extract the **whole ZIP**. Keep the executable beside its `_internal` directory. Run `smash-hcm-databank-client.exe` on Windows; from a terminal on Mac/Linux run `./smash-hcm-databank-client`. Native Mac bundles are unsigned/not notarized; see [platform notes](docs/BINARY_RELEASES.md).
-4. Choose **Setup** to enter your Nextcloud username and app password. Prefer OS credential-vault storage when offered. Confirm a protected local download directory; the suggested home directory is only used after confirmation.
+4. Choose **Setup** to enter your Nextcloud username and app password. Prefer OS credential-vault storage when offered. Confirm a protected local download directory; your OS Downloads folder is suggested by default and used only after confirmation.
 5. Check the connection and retrieve the manifest. On later launches, authenticated startup checks offer **Check for data updates?** Choosing Yes refreshes the manifest and offers changes to tracked downloads. You review the files and choose archive, keep or replace before an update.
 6. Choose **Download**: the OMOP database, published tabular datasets, cohort/modality ZIPs, or selected manifest files/folders. Byte count, speed and ETA are displayed, and completed transfers are checked against manifest size and SHA-256.
 
-The menu groups work into **Setup → Download → Local OMOP → Validate**, with **Data Access Request** and **Exit** alongside them. Unavailable options explain their prerequisites. Local OMOP work is available once a readable SQLite database is downloaded or selected; it works offline without Nextcloud credentials. Use **Validate** to recheck downloaded files and their presence later.
+The menu groups work into **Setup → Download → Local OMOP → Validate**, with **Data Access Request** and **Exit** alongside them. Unavailable options explain their prerequisites. PostgreSQL dumps are recognized, version-labelled and validated locally without a PostgreSQL driver. Querying their tables requires restoration into PostgreSQL; the current Local OMOP menu cannot query a dump directly. Existing SQLite analysis menus remain available only for earlier SQLite snapshots. Use **Validate** to recheck downloaded files and their presence later.
 
 The server administrator must publish `manifest.json` before catalogue downloads work. Its entries describe paths, versions, checksums, sizes and cohort/modality tags. The client cannot offer files absent from that manifest. [Login, manifest and download details](docs/NEXTCLOUD.md) · [Update behaviour](docs/UPDATES.md).
 
@@ -47,13 +47,15 @@ python -m pip install "./smash_hcm_databank_client-VERSION-py3-none-any.whl[ui,s
 smash-hcm-databank-client setup
 ```
 
-You can also run `python -m smash_hcm_databank_client`. To install from a source checkout, use `python -m pip install ".[ui,secure]"`. Minimal scripted/local-database use requires no third-party runtime dependencies; PostgreSQL, psycopg and Docker are unnecessary. [Full installation guide](docs/SETUP.md).
+You can also run `python -m smash_hcm_databank_client`. To install from a source checkout, use `python -m pip install ".[ui,secure]"`. Downloading and validating dump files requires no PostgreSQL server, psycopg or Docker. PostgreSQL analysis uses the separately installed optional workflow in a local virtual environment. [Full installation guide](docs/SETUP.md).
 
 **Upgrading from omop-exporter:** in the same Python environment, uninstall the old distribution with `python -m pip uninstall omop-exporter` before installing the new wheel. The new distribution exposes only `smash-hcm-databank-client`. Existing download folders, saved profiles and credentials are retained. Application code now lives in `src/smash_hcm_databank_client/`. Replace old `python -m omop_exporter` invocations with `python -m smash_hcm_databank_client`; older feature-set identifiers still work.
 
 ## Inspect and report on the OMOP database
 
-All analysis reads the local `.db` directly, read-only. It does not need a WP2 report or checkout. The file must actually be **SQLite**: renaming a PostgreSQL dump to `.db` does not convert it. Database and asset versions are independent of the client version.
+**The published SMASH `.db` is a PostgreSQL dump.** Downloading and validating it does not make it queryable as a local SQLite file. [Restore and PostgreSQL analysis instructions](docs/POSTGRES_DUMPS.md) explain the required separate workflow; no additional WP2 report is required for the current ETL ledgers. Database and asset versions are independent of the client version.
+
+The direct-file report/export examples below describe the existing **earlier SQLite snapshot** adapter. They do not run directly on the current PostgreSQL dump. Equivalent configuration of every modern report/feature preset against PostgreSQL is not yet integrated into the portable menu.
 
 Select a database under **Validate → Select a local OMOP database**, then open **Local OMOP**. For scripts, pass `--db` explicitly (or set `SMASH_DATABANK_DB`):
 

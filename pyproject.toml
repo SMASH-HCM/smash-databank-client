@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "smash-hcm-databank-client"
-version = "0.12.2"
+version = "0.12.3"
 description = "SMASH-HCM Databank Client: downloads, SQLite inspection and reproducible cohort exports"
 readme = "README.md"
 requires-python = ">=3.9"

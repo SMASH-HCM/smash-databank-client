@@ -15,6 +15,7 @@ from .nextcloud import NextcloudClient, NextcloudConfig, NextcloudError, origin,
 from .output import write_json
 from .settings import SMASH_MANIFEST, SMASH_REMOTE_ROOT, SMASH_URL
 from .platform_paths import default_download_directory
+from .database_artifacts import database_format, inspect_database
 
 
 def default_state_dir():
@@ -105,12 +106,29 @@ class Workspace:
                 temporary.unlink()
 
     def database_available(self):
-        """Check schema/readability without hashing or reading patient records."""
+        """Check artifact readability; a PostgreSQL dump is not a live database."""
         try:
-            with OmopDatabase(self.state["active_db"]) as database:
-                return "person_id" in database.columns("person")
+            inspect_database(self.state["active_db"])
+            return True
         except (OSError, ValueError, sqlite3.Error):
             return False
+
+    def database_is_dump(self):
+        try:
+            return database_format(self.state["active_db"]).startswith("postgres-")
+        except (OSError, ValueError):
+            return False
+
+    def database_reference(self):
+        """Use one manifest match, otherwise the selected file's own receipt."""
+        active = self.state["active_db"]
+        try:
+            matches = [entry for entry in self.manifest()["files"] if Path(entry["path"]).name == Path(active).name and is_database(entry)]
+            if len(matches) == 1:
+                return matches[0]
+        except (OSError, ValueError):
+            pass
+        return next((record for record in self.state["downloads"].values() if record["local_path"] == active), {})
 
     def refresh_local(self):
         """Recover a unique database in confirmed download locations at startup.
@@ -134,7 +152,7 @@ class Workspace:
                 pass
         roots = [self.root / "downloads"] + ([Path(directory)] if directory else [])
         for root in roots:
-            for suffix in ("db", "sqlite", "sqlite3"):
+            for suffix in ("db", "dump", "backup", "sql"):
                 for pattern in ("*." + suffix, "*/*." + suffix, "*/*/*." + suffix):
                     try:
                         candidates.update(str(path.resolve()) for path in root.glob(pattern)
@@ -144,9 +162,8 @@ class Workspace:
         valid = []
         for candidate in sorted(candidates):
             try:
-                with OmopDatabase(candidate) as database:
-                    if "person_id" in database.columns("person"):
-                        valid.append(str(database.path))
+                inspect_database(candidate)
+                valid.append(candidate)
             except (OSError, ValueError, sqlite3.Error):
                 pass
         valid = sorted(set(valid))
@@ -319,18 +336,20 @@ class Workspace:
             except (OSError, ValueError):
                 pass  # An explicit download action creates a fresh verified copy.
         destination = self._destination(entry["path"], manifest["release"])
-        self.client().download(entry["path"], destination, expected_sha256=entry["sha256"], max_bytes=max(1, entry["size_bytes"]), expected_size=entry["size_bytes"], **({"progress": progress} if progress else {}))
+        def transfer_progress(count, total, phase="transfer"):
+            progress(count, total, "validating" if phase == "complete" else phase)
+        self.client().download(entry["path"], destination, expected_sha256=entry["sha256"], max_bytes=max(1, entry["size_bytes"]), expected_size=entry["size_bytes"], **({"progress": transfer_progress} if progress else {}))
         path = destination / Path(entry["path"]).name
         if is_database(entry):
-            with OmopDatabase(path) as database:
-                if not database.capabilities()["persons"]:
-                    raise NextcloudError("Downloaded file does not contain an OMOP person table; the previous database remains selected")
+            inspect_database(path)
         record = {"local_path": str(path), "sha256": entry["sha256"], "size_bytes": entry["size_bytes"], "release": manifest["release"], "checksum_source": "manifest",
                   "artifact_id": entry.get("artifact_id"), "version": entry.get("version"), "kind": entry.get("kind")}
         self.state["downloads"][entry["path"]] = record
         self.save()
         if is_database(entry):
             self.register_database(path)
+        if progress:
+            progress(entry["size_bytes"], entry["size_bytes"], "complete")
         return {"status": "DOWNLOADED", **record}
 
     def download_file(self, remote, progress=None):
@@ -384,9 +403,7 @@ class Workspace:
 
     def register_database(self, path):
         path = Path(path).expanduser().resolve(strict=True)
-        with OmopDatabase(path) as database:
-            if not database.capabilities()["persons"]:
-                raise NextcloudError("This file does not contain an OMOP person table")
+        inspect_database(path)
         self.state["active_db"] = str(path)
         self.save()
 
@@ -406,13 +423,19 @@ class Workspace:
         if not path:
             return "Not downloaded or selected"
         try:
-            with OmopDatabase(path) as database:
-                release = database.release_metadata().get("release")
+            if self.database_is_dump():
+                inspect_database(path)
+                release = None
+            else:
+                with OmopDatabase(path) as database:
+                    release = database.release_metadata().get("release")
             if not release:
                 for record in self.state["downloads"].values():
                     if record.get("local_path") == path:
-                        release = record.get("release")
+                        release = record.get("version") or record.get("release")
                         break
+            if not release and self.database_is_dump() and re.search(r"v\d", Path(path).stem, re.I):
+                release = Path(path).stem
             return str(release or "version not recorded") + " | " + Path(path).name
         except (OSError, ValueError, sqlite3.Error):
             return "Selected database is unavailable: " + Path(path).name

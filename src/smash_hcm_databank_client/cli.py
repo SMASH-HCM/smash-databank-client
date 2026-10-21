@@ -19,6 +19,7 @@ from .output import bundle, write_csv, write_json
 from .reports import REPORTS, write_report, write_data_report
 from .features import PRESETS, load_variable_set
 from .progress import DownloadProgress
+from .database_artifacts import database_format, validate_dump
 from .availability import POLICIES
 from .validation import validate_database
 
@@ -163,7 +164,23 @@ def main(argv=None):
             return 0
         if args.command == "validate" and args.sha256 and not re.fullmatch(r"[0-9a-fA-F]{64}", args.sha256):
             raise ValueError("--sha256 must contain 64 hexadecimal characters")
-        with OmopDatabase(database_path(args)) as database:
+        path = database_path(args)
+        if database_format(path).startswith("postgres-"):
+            if args.command != "validate":
+                raise ValueError("This is a PostgreSQL dump. Restore into PostgreSQL before analysis; see docs/POSTGRES_DUMPS.md for the optional PostgreSQL workflow.")
+            result = validate_dump(path, args.sha256)
+            for capability in args.require_capability:
+                result["checks"].append({"check": "capability:" + capability, "status": "FAIL", "detail": "Requires a restored PostgreSQL database"})
+            if args.asset_root:
+                result["checks"].append({"check": "external_assets", "status": "FAIL", "detail": "A dump cannot be queried for its asset catalogue before restoration"})
+            if any(check["status"] == "FAIL" for check in result["checks"]):
+                result["status"] = "FAIL"
+            if args.out:
+                with bundle(args.out) as stage:
+                    write_json(stage / "validation.json", result)
+            print(json.dumps(result, indent=2, allow_nan=False))
+            return 2 if result["status"] == "FAIL" else 0
+        with OmopDatabase(path) as database:
             if args.command == "validate":
                 result = validate_database(database, args.sha256, args.require_capability, args.asset_root)
                 if args.out:

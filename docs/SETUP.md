@@ -2,7 +2,7 @@
 
 Source: [SMASH-HCM/smash-hcm-databank-client](https://github.com/SMASH-HCM/smash-hcm-databank-client). Clone it with `git clone https://github.com/SMASH-HCM/smash-hcm-databank-client.git`, then `cd smash-hcm-databank-client`. Release ZIPs/wheels are on the repository's [Releases page](https://github.com/SMASH-HCM/smash-hcm-databank-client/releases). The installed command/module is `smash-hcm-databank-client` / `smash_hcm_databank_client`.
 
-The core exporter uses Python's built-in SQLite driver and has **no third-party runtime dependencies**. It does not import or install psycopg, PostgreSQL, Docker, pandas or WP2. Python 3.9+ is supported; a current maintained Python version is preferable for a new installation.
+The core downloader and dump validator have **no third-party runtime dependencies**. They do not import or install psycopg, PostgreSQL, Docker, pandas or WP2. The published `.db` is a PostgreSQL dump; see [PostgreSQL dump validation and analysis](POSTGRES_DUMPS.md). An earlier direct-file SQLite analysis adapter remains for compatibility. Python 3.9+ is supported; a current maintained Python version is preferable for a new installation.
 
 All commands below run from the exporter checkout. Dependencies are installed in its `.venv`, not global Python.
 

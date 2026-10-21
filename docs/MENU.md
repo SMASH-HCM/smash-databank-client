@@ -2,7 +2,7 @@
 
 Repository: [SMASH-HCM/smash-hcm-databank-client](https://github.com/SMASH-HCM/smash-hcm-databank-client). The executable/command is `smash-hcm-databank-client`.
 
-For the portable Windows application, extract the ZIP and run `smash-hcm-databank-client.exe`. Python is included. The title is **SMASH-HCM DATABANK CLIENT**. The boxed header shows separate databank connectivity and login indicators, the **Download location**, **SMASH-HCM Manifest** schema/release and **SMASH-HCM OMOP database** version; missing database/manifest values are `<unavailable>`. Long paths wrap inside the box. Use Up/Down and Enter to open a section, and Space to tick items in multi-select lists. You can cancel or go Back without downloading anything.
+For the portable Windows application, extract the ZIP and run `smash-hcm-databank-client.exe`. Python is included. The title is **SMASH-HCM DATABANK CLIENT <client-version>**, also shown in the table border. The boxed header shows separate databank connectivity and login indicators, the **Download location**, **SMASH-HCM Manifest** schema/release and **SMASH-HCM OMOP database** version; missing database/manifest values are `<unavailable>`. Long paths wrap inside the box. Use Up/Down and Enter to open a section, and Space to tick items in multi-select lists. You can cancel or go Back without downloading anything.
 
 ## Everyday workflow
 
@@ -21,6 +21,10 @@ If the folder connection passes but the manifest returns HTTP 404, the menu repo
 The application displays the logo once and updates release/location status after actions. The newly supplied block-character heart/SMASH/HCM logo is used, with a scaled version for ordinary terminals; the previous repeating-letter fill is no longer used.
 
 The header shows green **[OK]** or red **[NO]**, also readable without colour. Startup first performs a credential-free server probe bounded to three seconds, then checks configured authenticated databank access. Connectivity and login have independent rows: a reachable server can have a failed or unchecked login. A successful login also establishes connectivity if the initial probe failed. The update prompt controls manifest/data transfer. Offline/failed checks still open the local menu. Passwords are not displayed or rewritten by startup checks.
+
+Both checks complete **before the first status table** and print **SUCCESS** on success. An unchanged manifest check prints only **Checking Databank manifest ... SUCCESS**, unless a copy warning or tracked-file update/repair needs attention. Database/ZIP/CSV transfers still show full byte/speed/ETA progress.
+
+Published OMOP `.db` files are **PostgreSQL dumps**. A recognizable local dump enables artifact validation and displays its release, but direct Local OMOP analysis stays disabled until a supported analysis workflow is used after restoration. It is never opened as SQLite. See [dump validation and PostgreSQL analysis](POSTGRES_DUMPS.md); earlier SQLite snapshots keep their existing analysis compatibility.
 
 On first use **Download location** shows the OS Downloads path with `(default)`. Its indicator checks whether the folder exists. Confirming a location creates it if needed and saves it across sessions. Startup also creates an already-confirmed location saved by older versions. Missing/inaccessible directories remain red. A database must be present and readable; the manifest must be locally available and pass its schema validation. Startup never creates or saves an unconfirmed default download directory. These availability indicators do not replace **Validate**, which checks downloaded file sizes and hashes. Status checks are session-only and are refreshed after actions; the HTTPS probe runs once per launch.
 

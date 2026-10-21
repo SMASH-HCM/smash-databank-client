@@ -15,6 +15,7 @@ def offline_menu_startup(monkeypatch, tmp_path):
     # Existing workflow cases exercise individual menu actions. Startup update
     # networking/prompts are covered explicitly in test_updates.py.
     monkeypatch.setattr("smash_hcm_databank_client.menu.startup_updates", lambda *args, **kwargs: None)
+    monkeypatch.setattr("smash_hcm_databank_client.menu.check_login", lambda *args, **kwargs: None)
     # No prompt test may create/write the real operating-system Downloads folder.
     monkeypatch.setattr("smash_hcm_databank_client.workspace.default_download_directory", lambda: tmp_path / "Downloads")
 

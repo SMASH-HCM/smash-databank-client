@@ -2,6 +2,7 @@
 from pathlib import Path
 import shutil
 import sys
+from . import __version__
 
 SMASH_URL = "https://smash-hcm.ucd.ie"
 SMASH_REMOTE_ROOT = "databank"
@@ -37,4 +38,4 @@ def terminal_logo():
         rendered.encode(sys.stdout.encoding or "utf-8")
     except UnicodeEncodeError:
         rendered = "\n".join("".join("#" if char != " " else " " for char in line) for line in lines)
-    return rendered + "\n          " + APP_TITLE + "\n"
+    return rendered + "\n          " + APP_TITLE + " " + __version__ + "\n"

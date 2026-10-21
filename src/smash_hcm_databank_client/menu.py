@@ -8,6 +8,7 @@ import webbrowser
 
 from .credentials import env_credentials, load_vault, native_vault, save_env, save_vault
 from .database import OmopDatabase
+from .database_artifacts import validate_dump
 from .exports import export_events
 from .nextcloud import NextcloudConfig, NextcloudError
 from .settings import DATA_ACCESS_URL, SMASH_MANIFEST, SMASH_REMOTE_ROOT, SMASH_URL, terminal_logo
@@ -22,7 +23,7 @@ from .connectivity import probe_server
 from .validation import validate_database
 from .local_tools import export_menu, reports_menu, variables_menu
 from .progress import DownloadProgress
-from .updates import startup_updates
+from .updates import startup_updates, check_login
 
 
 def secret_prompt(prompt):
@@ -36,12 +37,15 @@ def secret_prompt(prompt):
         raise NextcloudError("This terminal cannot hide password input; use an interactive console") from None
 
 
-def banner(workspace, write=print, startup=False):
-    write(terminal_logo())
+def banner(workspace, write=print, startup=False, show_logo=True):
+    if show_logo:
+        write(terminal_logo())
     if startup:
         workspace.refresh_local()
         write("Checking server reachability (up to 3 seconds)...")
         workspace.server_status = probe_server()
+        write("Databank connectivity: " + ("SUCCESS" if workspace.server_status["available"] else "FAILED"))
+        check_login(workspace, write)
     status(workspace, write)
     if startup and workspace.discovery_message:
         write(text(workspace.discovery_message))
@@ -58,7 +62,7 @@ def check_connection(workspace, write=print):
     if result["status"] != "PASS":
         raise NextcloudError("Connection check did not pass; manifest retrieval was not started")
     workspace.connection_status = True
-    write("Connection: PASS (verified HTTPS WebDAV)")
+    write("Connection: SUCCESS (verified HTTPS WebDAV)")
 
 
 def retrieve_manifest(workspace, path=None, write=print, connection_checked=False):
@@ -146,10 +150,11 @@ def run_menu(workspace, initial_setup=False, read=input, password_read=None, wri
     if write is print:
         write = console_write
     try:
-        banner(workspace, write, startup=True)
         if initial_setup:
+            write(terminal_logo())
             setup(workspace, read, password_read, write, plain)
-        startup_updates(workspace, read, write, plain)
+        banner(workspace, write, startup=True, show_logo=not initial_setup)
+        startup_updates(workspace, read, write, plain, True)
         first = True
         while True:
             if not first:
@@ -240,14 +245,20 @@ def run_menu(workspace, initial_setup=False, read=input, password_read=None, wri
                     if not opened:
                         write("Open this link in your browser to complete the access request.")
                 elif choice == "12":
-                    write("Checking SQLite integrity, person links and database capabilities...")
-                    with OmopDatabase(workspace.state["active_db"]) as database:
-                        result = validate_database(database)
+                    if workspace.database_is_dump():
+                        write("Checking PostgreSQL dump signature and file integrity...")
+                        active = workspace.state["active_db"]
+                        expected = workspace.database_reference()
+                        result = validate_dump(active, expected.get("sha256"), expected.get("size_bytes"))
+                    else:
+                        write("Checking local snapshot integrity, person links and database capabilities...")
+                        with OmopDatabase(workspace.state["active_db"]) as database:
+                            result = validate_database(database)
                     write("Database validation: " + result["status"])
                     for check in result["checks"]:
                         write(text(check["status"]) + " | " + text(check["check"]))
                     write("SHA-256: " + result["database_sha256"])
-                    write("Expected hash comparison needs a trusted manifest or validate --sha256; technical checks do not establish clinical completeness.")
+                    write(result["scope"])
                 else:
                     write("Choose a listed option, or 0 to exit.")
             except (ValueError, OSError, KeyError, sqlite3.Error) as exc:

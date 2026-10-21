@@ -169,7 +169,7 @@ def test_startup_checks_login_but_declining_update_fetches_no_manifest(tmp_path)
     messages = []
     startup_updates(workspace, read=lambda prompt: "n", write=messages.append, plain=True)
     assert server.calls == ["check"] and workspace.connection_status is True
-    assert any("PASS" in line for line in messages)
+    assert any("SUCCESS" in line for line in messages)
 
 
 def test_invalid_login_does_not_fetch_manifest_or_prompt(tmp_path):
@@ -217,7 +217,7 @@ def test_new_database_is_validated_before_retiring_active_old_database(tmp_path,
     workspace, server = configured(tmp_path, old=omop_path.read_bytes(), path="OMOP.db", kind="database")
     selected = workspace.state["active_db"]
     candidate = publish(workspace, server, b"not SQLite", "OMOP.db", kind="database")
-    with pytest.raises(ValueError, match="SQLite"):
+    with pytest.raises(ValueError, match="PostgreSQL"):
         apply_update(workspace, candidate, "replace")
     assert workspace.state["active_db"] == selected and Path(selected).exists()
     assert workspace.state["downloads"]["OMOP.db"] == candidate["old_record"]

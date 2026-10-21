@@ -7,7 +7,8 @@ import sys
 import textwrap
 
 from .prompts import text
-from .settings import SMASH_DATABANK_URL
+from .settings import SMASH_DATABANK_URL, APP_TITLE
+from . import __version__
 from .console import is_console_writer
 
 
@@ -19,6 +20,8 @@ def status_panel(workspace, width=None):
         if not info.startswith("Selected database is unavailable"):
             version, _, filename = info.partition(" | ")
             database = version if version != "version not recorded" else filename + " (version not recorded)"
+            if workspace.database_is_dump():
+                database += " (PostgreSQL dump)"
     try:
         catalogue = workspace.manifest()
         manifest = "schema " + catalogue["schema_version"] + " | " + catalogue["release"]
@@ -46,12 +49,15 @@ def status_panel(workspace, width=None):
     inner = width - 4
     label_width = min(max(len(label) for label, _, _ in rows) + 2, inner - 10)
     border = "|" + "-" * (width - 2) + "|"
-    rendered = [border]
+    title = " " + APP_TITLE + " " + __version__ + " "
+    rendered = ["|" + title.center(width - 2, "-") + "|"] if len(title) <= width - 2 else [border] + ["| " + part.ljust(inner) + " |" for part in textwrap.wrap(title.strip(), inner)]
     for label, value, available in rows:
         parts = textwrap.wrap(text(value), width=inner - label_width - 5, break_on_hyphens=False) or [""]
-        for number, part in enumerate(parts):
+        labels = textwrap.wrap(label, width=label_width, break_on_hyphens=False)
+        for number in range(max(len(parts), len(labels))):
+            part = parts[number] if number < len(parts) else ""
             indicator = ("[OK] " if available else "[NO] ") if number == 0 else "     "
-            content = (label if number == 0 else "").ljust(label_width) + indicator + part
+            content = (labels[number] if number < len(labels) else "").ljust(label_width) + indicator + part
             rendered.append("| " + content.ljust(inner) + " |")
     rendered.append(border)
     return "\n".join(rendered)
