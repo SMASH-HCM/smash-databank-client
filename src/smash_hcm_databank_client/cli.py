@@ -79,7 +79,12 @@ def main(argv=None):
                     raise ValueError("The setup profile uses the fixed SMASH databank folder; use an explicit --env-file for another root")
                 client = configured.client()
             else:
-                client = NextcloudClient(NextcloudConfig.from_env(args.env_file or default_env_file(args.state_dir), args.remote_root))
+                cloud_config = NextcloudConfig.from_env(args.env_file or default_env_file(args.state_dir), args.remote_root)
+                if args.remote_root is None and not cloud_config.remote_root:
+                    from dataclasses import replace
+                    from .settings import SMASH_REMOTE_ROOT
+                    cloud_config = replace(cloud_config, remote_root=SMASH_REMOTE_ROOT)
+                client = NextcloudClient(cloud_config)
             if args.cloud_action == "check":
                 result = client.check()
             elif args.cloud_action == "list":

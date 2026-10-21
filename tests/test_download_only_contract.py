@@ -50,3 +50,26 @@ def test_sqlite_release_is_explicitly_unsupported(tmp_path):
     path.write_bytes(b"SQLite format 3\x00" + b"0" * 50)
     with pytest.raises(ValueError, match="SQLite is unsupported"):
         database_format(path)
+
+
+@pytest.mark.parametrize("configured,explicit,expected", [(None, None, "databank"), ("custom", None, "custom"), ("custom", "databank", "databank")])
+def test_scripted_login_checks_the_databank_without_extra_env_settings(tmp_path, monkeypatch, configured, explicit, expected):
+    from smash_hcm_databank_client import cli
+    env_file = tmp_path / ".env"
+    content = "NEXTCLOUD_URL=https://smash-hcm.ucd.ie\nNEXTCLOUD_USERNAME=fixture\nNEXTCLOUD_PASSWORD=synthetic\n"
+    if configured is not None:
+        content += "NEXTCLOUD_REMOTE_ROOT=" + configured + "\n"
+    env_file.write_text(content)
+    monkeypatch.delenv("NEXTCLOUD_REMOTE_ROOT", raising=False)
+    roots = []
+    class Client:
+        def __init__(self, config):
+            roots.append(config.remote_root)
+        def check(self):
+            return {"status": "SUCCESS"}
+    monkeypatch.setattr(cli, "NextcloudClient", Client)
+    args = ["nextcloud", "check", "--env-file", str(env_file)]
+    if explicit is not None:
+        args += ["--remote-root", explicit]
+    assert cli.main(args) == 0
+    assert roots == [expected]
