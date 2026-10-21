@@ -33,7 +33,7 @@ class DownloadProgress:
             self._emit(self.label + " | " + size_label(count) + " cached; size and SHA-256 verified", True)
             self.final = True
             return
-        if not terminal and self.last is not None and now - self.last < 0.2:
+        if not terminal and phase != "validating" and self.last is not None and now - self.last < 0.2:
             return
         self.last = now
         elapsed = max(now - self.start, 0.001)

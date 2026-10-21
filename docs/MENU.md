@@ -72,15 +72,15 @@ Choose **Download → Download specific file(s) / folder**. The virtual tree is 
 
 Each folder offers immediate files, all files recursively beneath that folder, a multi-file selector and individual file entries. The root offers the same choices for the whole catalog. Counts/sizes are shown for folders; selecting a folder then opens the normal file/size/location confirmation review. Only selected manifest entries are transferred, once each, with their expected sizes and hashes. Existing archives remain intact. Remote relative paths remain in receipts; local storage uses the existing release/artifact-folder layout.
 
-Directory choices are derived from validated relative paths. Parent navigation is a menu operation within the catalog; absolute paths, `..` escapes and folders absent from the manifest are rejected. Sibling names such as `site` and `site2` remain separate. Empty remote folders cannot be represented by this file-only manifest.
+Directory choices are derived from validated downloadable-file paths. Parent navigation is a menu operation within the catalog; absolute paths, `..` escapes and folders absent from the manifest are rejected. Sibling names such as `site` and `site2` remain separate. Directory-record digests in an inventory are retained as metadata, not downloaded as files; empty directories with no downloadable descendants do not appear as download choices.
 
 ## Preparing the manifest
 
-Copy `manifest.example.json` and add actual published artifacts. Each entry requires a unique safe relative `path`, exact `size_bytes` and SHA-256 of the stored file. Schema version is `1`; `release` is required. For example, the following is a template: replace the path, size and checksum before use.
+Copy `manifest.example.json` and add actual published artifacts. Each downloadable entry requires a unique safe relative `path`, exact `size_bytes` and SHA-256 of the stored file. Current schema version is `"1.0"`; the older numeric `1` is accepted. The example layout uses `release` and `files`. The published inventory's `generated_utc`, `database` and `entries` layout is also accepted; a display release is derived from its database filename or generation date. Compatible higher schema versions refresh automatically, while invalid paths/checksums/layouts still fail. For example, the following is a template: replace the path, size and checksum before use.
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": "1.0",
   "release": "v1.4",
   "files": [
     {

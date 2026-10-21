@@ -106,7 +106,8 @@ def test_cancelled_batch_keeps_confirmed_directory_but_transfers_no_files(tmp_pa
     state, server = workspace(tmp_path, [item("ecg.zip", ["rennes_test"], ["ecg"])])
     destination = tmp_path / "chosen-data"
     assert not download(state, "curated", read=answers("1", "1", str(destination), "y", "n"), write=lambda value: None)
-    assert not server.calls and destination.is_dir() and not list(destination.iterdir())
+    assert not server.calls and destination.is_dir()
+    assert [path.name for path in destination.iterdir()] == ["manifest.json"]  # Catalogue only; no data transfer.
 
 
 def test_changed_location_preserves_old_files_and_uses_new_location_on_request(tmp_path):

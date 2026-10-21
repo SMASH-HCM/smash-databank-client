@@ -90,7 +90,7 @@ Prefer a machine-readable JSON file in the shared folder, with paths relative to
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": "1.0",
   "release": "v1.4",
   "files": [
     {
@@ -103,7 +103,13 @@ Prefer a machine-readable JSON file in the shared folder, with paths relative to
 }
 ```
 
-This schema is implemented by the menu. No real server manifest has been created yet. `manifest.example.json` provides a loadable README-only example. Add database files (`kind: database`), archives or individual assets as separate entries; don't store login URLs, passwords or app tokens in it. The selector accepts `cohorts`, `modalities` and `variable_groups` arrays; the menu currently exposes cohort/modality selection. For imaging/ECG delivery also record representation, site scope, processing/QC version and archive membership/index location where applicable. Keep detailed patient/exam mappings in the controlled database/asset catalog; a directory listing alone cannot establish cohort membership.
+The current schema version is **`"1.0"`**; the older numeric `1`, numeric `1.0` and string `"1"` remain accepted. A higher version number is accepted automatically when its required layout and integrity fields remain compatible. Unsupported layouts, unsafe paths, missing sizes/checksums and incompatible hash algorithms still fail validation. Schema version describes the JSON format, not the database release or data freshness.
+
+The client supports both this `release` + `files` layout and the published databank inventory's `generated_utc` + `entries` layout. Inventory entries use `type: file` or `type: directory`; directory digests describe directory records and are never treated as downloadable-file SHA-256s. The top-level `database.path` identifies the OMOP download and must agree with its file entry. Without an explicit release label, the catalogue is labelled using the database filename, or generation date when no database is declared; this does not verify an embedded database version. Unknown additional metadata is retained. Cohort/modality selection still needs explicit published tags; the adapter does not infer clinical membership from filenames.
+
+A real manifest is now published on Nextcloud. The 0.12.1 fix was tested against it on 21 October 2026: schema `1.0`, 472 downloadable file entries and 29 directory records. Only the manifest was downloaded during this check. A separate metadata request for its advertised `SMASH_v1.4_rc5.db` returned HTTP 404 with the configured account; the publisher must make that path available/share it or correct the catalogue before that database can be downloaded. Schema validation does not establish that every advertised asset is accessible. `manifest.example.json` remains a small illustrative README-only example. Add database files (`kind: database`), archives or individual assets as separate entries; don't store login URLs, passwords or app tokens in it. The selector accepts `cohorts`, `modalities` and `variable_groups` arrays. For imaging/ECG delivery also record representation, site scope, processing/QC version and archive membership/index location where applicable. Keep detailed patient/exam mappings in the controlled database/asset catalog; a directory listing alone cannot establish cohort membership.
+
+After validation, the client keeps its authoritative copy under the local settings directory's `manifests/<ID>/` cache, and atomically saves a convenient **`manifest.json` in the confirmed download directory**. It prints that location. A failed validation cannot replace the previous valid cache or visible copy. If the download directory is unavailable/locked, a warning explains that the valid private cache remains usable. Selecting a new download directory copies the current valid catalogue there; an unchanged-ETag update check also repairs a missing visible copy without another transfer.
 
 Use immutable versioned paths for release artifacts. Downloading a server-generated folder ZIP is less reproducible than downloading a finalized archive with a recorded hash. Menu option 3 retrieves `manifest.json` (or another entered relative path), and option 10 loads a local copy. Database and cohort/modality downloads verify size/hash automatically, then become available for local integrity checks and offline cache reuse. See [MENU.md](MENU.md) for the complete workflow and baseline export constraints.
 

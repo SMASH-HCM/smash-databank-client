@@ -7,7 +7,7 @@ import uuid
 
 from .database import sha256
 from .download_flow import folder, size_label
-from .manifest import is_database
+from .manifest import ManifestError, is_database
 from .nextcloud import NextcloudError
 from .output import bundle, write_json
 from .progress import DownloadProgress
@@ -29,6 +29,7 @@ def refresh_manifest(workspace, progress=None):
             raise NextcloudError("The manifest path identifies a folder")
         path = Path(workspace.state["manifest_path"])
         if info.get("etag") == version["etag"] and version.get("cache_sha256") == sha256(path):
+            workspace.publish_manifest_copy()
             return {"status": "UNCHANGED", "manifest": previous}
     manifest = workspace.retrieve_manifest(remote, progress=progress)
     return {"status": "FIRST" if previous is None else "UNCHANGED" if previous == manifest else "UPDATED", "manifest": manifest}
@@ -155,6 +156,10 @@ def check_updates(workspace, read=input, write=print, plain=False):
     with DownloadProgress("manifest.json", write) as progress:
         refreshed = refresh_manifest(workspace, progress)
     write("Manifest: " + refreshed["status"] + " | " + text(refreshed["manifest"]["release"]))
+    if workspace.manifest_copy_notice:
+        write(workspace.manifest_copy_notice)
+    elif workspace.state["download_root"]:
+        write("Manifest saved: " + text(Path(workspace.state["download_root"]) / "manifest.json"))
     candidates = update_candidates(workspace)
     if not candidates:
         write("No updates to tracked downloads. New catalogue files are available through Download.")
@@ -207,6 +212,8 @@ def startup_updates(workspace, read=input, write=print, plain=False):
         return
     try:
         check_updates(workspace, read, write, plain)
+    except ManifestError as exc:
+        write("Manifest validation failed: " + text(exc) + ". Your cached manifest and local files are retained; retry from Setup.")
     except NextcloudError as exc:
         if exc.status_code == 404:
             write("Databank access works, but manifest.json is not available (HTTP 404). The administrator must publish it. Your cached manifest is retained.")

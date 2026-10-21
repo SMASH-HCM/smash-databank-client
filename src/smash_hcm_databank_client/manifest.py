@@ -5,6 +5,29 @@ from pathlib import Path
 
 from .nextcloud import NextcloudError, remote_path
 
+CURRENT_SCHEMA_VERSION = "1.0"
+
+
+class ManifestError(NextcloudError):
+    """A safe validation error, separate from transport/authentication failures."""
+
+
+def schema_version(value):
+    """Accept legacy 1 and dotted versions; compatibility is checked by fields.
+
+    A newer number does not require a client release if the published catalogue
+    still supplies the paths, byte sizes and stored-file SHA-256s we understand.
+    """
+    if type(value) not in (str, int, float):
+        raise ManifestError("Manifest schema_version must be 1.0 or a newer numeric version")
+    version = str(value).strip()
+    if not re.fullmatch(r"(?:0|[1-9][0-9]{0,8})(?:\.(?:0|[1-9][0-9]{0,8})){0,2}", version):
+        raise ManifestError("Manifest schema_version must be 1.0 or a newer numeric version")
+    parts = [int(part) for part in version.split(".")]
+    if parts[0] < 1:
+        raise ManifestError("Manifest schemas older than 1.0 are unsupported")
+    return version + ".0" if len(parts) == 1 else version
+
 
 def normalized(value):
     return str(value).strip().casefold().replace("_", "-").replace(" ", "-")
@@ -13,42 +36,83 @@ def normalized(value):
 def load_manifest(path):
     path = Path(path)
     if path.stat().st_size > 8 * 1024 * 1024:
-        raise NextcloudError("Manifest exceeds the 8 MiB limit")
+        raise ManifestError("Manifest exceeds the 8 MiB limit")
     try:
         data = json.loads(path.read_text(encoding="utf-8-sig"))
     except (ValueError, UnicodeError):
-        raise NextcloudError("Manifest must be valid UTF-8 JSON") from None
+        raise ManifestError("Manifest must be valid UTF-8 JSON") from None
     return validate_manifest(data)
 
 
 def validate_manifest(data):
-    if not isinstance(data, dict) or type(data.get("schema_version")) is not int or data.get("schema_version") != 1:
-        raise NextcloudError("Manifest schema_version must be 1")
-    if not isinstance(data.get("release"), str) or not data["release"].strip():
-        raise NextcloudError("Manifest needs a release name")
-    if not isinstance(data.get("files"), list):
-        raise NextcloudError("Manifest files must be a list")
-    seen, identities, files = set(), set(), []
-    for entry in data["files"]:
+    if not isinstance(data, dict):
+        raise ManifestError("Manifest must be a JSON object")
+    version = schema_version(data.get("schema_version"))
+    catalogue = "entries" in data
+    if catalogue and "files" in data:
+        raise ManifestError("Manifest must provide one catalogue: entries or files, not both")
+    source = data.get("entries" if catalogue else "files")
+    if not isinstance(source, list):
+        raise ManifestError("Manifest needs a compatible entries or files list; a client update may be needed for a different layout")
+    if str(data.get("hash_algorithm", "SHA-256")).upper().replace("-", "") != "SHA256":
+        raise ManifestError("Manifest hashes must use SHA-256 of stored file bytes")
+    database = data.get("database")
+    if database is not None and (not isinstance(database, dict) or not isinstance(database.get("path"), str)):
+        raise ManifestError("Manifest database reference needs a relative path")
+    try:
+        database_path = remote_path(database["path"]) if database is not None else None
+    except NextcloudError as exc:
+        raise ManifestError(str(exc)) from None
+    if database is not None:
+        if "size_bytes" in database and (type(database["size_bytes"]) is not int or database["size_bytes"] < 0):
+            raise ManifestError("Manifest database size_bytes must be a nonnegative integer")
+        if "sha256" in database and (not isinstance(database["sha256"], str) or not re.fullmatch(r"[a-fA-F0-9]{64}", database["sha256"])):
+            raise ManifestError("Manifest database reference needs a valid SHA-256")
+        database = {**database, **({"sha256": database["sha256"].lower()} if "sha256" in database else {})}
+    release = data.get("release")
+    if release is None and catalogue:
+        # The databank inventory has no release field: label the catalogue from
+        # its explicit database filename, or its generation date. Not a DB check.
+        release = Path(database_path).stem if database_path else data.get("generated_utc")
+    if not isinstance(release, str) or not release.strip():
+        raise ManifestError("Manifest needs a release name, database filename or generation date")
+    seen, identities, files, directories = set(), set(), [], []
+    for entry in source:
         if not isinstance(entry, dict) or not isinstance(entry.get("path"), str):
-            raise NextcloudError("Each manifest file needs a relative path")
-        path = remote_path(entry["path"])
+            raise ManifestError("Each manifest entry needs a relative path")
+        try:
+            path = remote_path(entry["path"])
+        except NextcloudError as exc:
+            raise ManifestError(str(exc)) from None
         if not path or path in seen:
-            raise NextcloudError("Manifest file paths must be nonempty and unique")
+            raise ManifestError("Manifest entry paths must be nonempty and unique")
         seen.add(path)
         size, checksum = entry.get("size_bytes"), entry.get("sha256")
         if not isinstance(size, int) or isinstance(size, bool) or size < 0:
-            raise NextcloudError("Each manifest file needs a nonnegative integer size_bytes")
+            raise ManifestError("Each manifest entry needs a nonnegative integer size_bytes")
         if not isinstance(checksum, str) or not re.fullmatch(r"[a-fA-F0-9]{64}", checksum):
-            raise NextcloudError("Each manifest file needs a SHA-256 checksum")
+            raise ManifestError("Each manifest entry needs a SHA-256 checksum")
         item = {**entry, "path": path, "sha256": checksum.lower()}
+        kind = item.get("type", "file")
+        if kind not in ("file", "directory"):
+            raise ManifestError("Manifest entry type must be file or directory")
+        if kind == "directory":
+            # Its hash covers directory records, not downloadable file bytes.
+            directories.append(item)
+            continue
+        if item.get("hash_scope") not in (None, "file_bytes", "full_file_bytes", "stored_file_bytes"):
+            raise ManifestError("File SHA-256 must cover stored file bytes, not directory records")
+        if path == database_path:
+            if any(database.get(key, item[key]) != item[key] for key in ("size_bytes", "sha256")):
+                raise ManifestError("Manifest database reference disagrees with its file size or SHA-256")
+            item["kind"] = "database"
         if "artifact_id" in item:
             identity = item["artifact_id"]
             if not isinstance(identity, str) or not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._-]{0,159}", identity) or identity in identities:
-                raise NextcloudError("Manifest artifact_id must be a unique stable identifier using letters, digits, dots, dashes or underscores")
+                raise ManifestError("Manifest artifact_id must be a unique stable identifier using letters, digits, dots, dashes or underscores")
             identities.add(identity)
         if "version" in item and (not isinstance(item["version"], str) or not item["version"].strip()):
-            raise NextcloudError("Manifest file version must be a nonempty string")
+            raise ManifestError("Manifest file version must be a nonempty string")
         for key in ("cohorts", "modalities", "variable_groups"):
             value = item.get(key, [])
             singular = {"cohorts": "cohort", "modalities": "modality"}.get(key)
@@ -57,14 +121,20 @@ def validate_manifest(data):
             if isinstance(value, str):
                 value = [value]
             if not isinstance(value, list) or any(not isinstance(tag, str) or not tag.strip() for tag in value):
-                raise NextcloudError("Manifest selection tags must be strings or lists of nonempty strings")
+                raise ManifestError("Manifest selection tags must be strings or lists of nonempty strings")
             item[key] = value
         if "kind" in item and not isinstance(item["kind"], str):
-            raise NextcloudError("Manifest kind must be a string")
+            raise ManifestError("Manifest kind must be a string")
         if any(not isinstance(item[key], str) for key in ("representation", "format", "description", "split") if key in item):
-            raise NextcloudError("Manifest representation/format/description/split must be strings")
+            raise ManifestError("Manifest representation/format/description/split must be strings")
         files.append(item)
-    return {**data, "files": files}
+    if database_path is not None and not any(item["path"] == database_path for item in files):
+        raise ManifestError("Manifest database reference is absent from the downloadable files")
+    result = {key: value for key, value in data.items() if key != "entries"}
+    result.update(schema_version=version, release=release.strip(), files=files)
+    if catalogue:
+        result.update(source_layout="entries", directories=directories)
+    return result
 
 
 def is_database(entry):

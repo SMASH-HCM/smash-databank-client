@@ -1,11 +1,11 @@
-# Startup checks and data updates — 0.11
+# Startup checks and data updates
 
 The application and `python -m smash_hcm_databank_client` share this flow:
 
 1. Check fixed SMASH server reachability and discover/check the local database.
 2. If credentials are configured for this session, check authenticated access to the databank. A reachable server is not proof that the account can access the folder. Authentication failures leave local exports/reports and cached files available.
 3. On successful access, ask **Check for data updates now? [Y/n]**. Choosing No makes no manifest/data download. The account/root check has already run.
-4. Choosing Yes automatically checks `/databank/manifest.json`. An intact cached copy with the same server ETag needs no new JSON transfer. Otherwise the client downloads and validates the manifest, then installs the new cache. Without ETag support, it fetches the small JSON and compares contents. A missing/invalid manifest or connection error preserves the previous valid cache.
+4. Choosing Yes automatically checks `/databank/manifest.json`. An intact cached copy with the same server ETag needs no new JSON transfer. Otherwise the client downloads and validates the manifest, then installs the new cache and saves `manifest.json` in the confirmed download directory. Without ETag support, it fetches the small JSON and compares contents. A missing/invalid manifest or connection error preserves the previous valid cache and visible copy. Progress reports `validating` after transfer and only reports `complete` once the catalogue is usable.
 5. Show updated tracked files and missing/size-changed downloads. Select the files to download, choose **Archive (recommended)**, **Keep**, or **Replace/delete**, then confirm the action. Untracked new catalogue files remain available in the normal Download menu; the app does not download the whole databank automatically.
 
 This runs after startup and after login setup/change. **Setup → Check for data updates** reruns it. Manual connection/manifest options remain available for diagnosis. Configured authentication requests have an eight-second socket timeout per request; server reachability has the existing three-second bound. A vault may require an operating-system unlock. Offline/failing startup continues into the local menu.
@@ -14,13 +14,15 @@ These are **databank data updates**, not automatic executable replacement. Appli
 
 ## Version detection
 
+Current manifest format version is **`"1.0"`**. Legacy `1`/`1.0`/`"1"` representations are accepted, as are newer numeric versions whose required paths, stored-file byte sizes, SHA-256s and catalogue layout still validate. Both `files` and the published inventory's `entries` layout are supported. The client does not require a manifest schema number to increase before checking for new data; changed ETags/content trigger refreshes even at schema `1.0`. A genuinely incompatible format produces a specific validation error and retains the previous catalogue. See [manifest compatibility and cache locations](NEXTCLOUD.md#4-manifest-to-prepare).
+
 Per-file SHA-256 and size are authoritative for detecting a changed tracked version; the manifest's display release name need not change. The quick check also tests file presence and size. It does not rehash multi-gigabyte local files on every startup; use Validate for complete local integrity checking.
 
 An optional stable `artifact_id` lets a publisher move an artifact to a new versioned path. Use a separate ID for each database, cohort/modality/representation ZIP, or cohort/feature-set CSV. IDs must be unique within a manifest. Never reuse an ID for a different population or representation. `version` is an optional human-readable per-file label.
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": "1.0",
   "release": "v1.4",
   "files": [
     {

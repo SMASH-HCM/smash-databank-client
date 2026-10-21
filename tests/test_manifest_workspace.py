@@ -166,7 +166,7 @@ def test_menu_cohort_modality_download_does_not_extract_archive(tmp_path):
     assert len(list((tmp_path / "data").rglob("rennes_ecg.zip"))) == 1
 
 
-@pytest.mark.parametrize("version", [True, 1.0, "1", None])
-def test_manifest_version_is_integer_only(version):
+@pytest.mark.parametrize("version", [True, False, 0, 0.9, "v1.0", "1..0", None])
+def test_invalid_manifest_versions_are_rejected(version):
     with pytest.raises(NextcloudError):
         validate_manifest({"schema_version": version, "release": "fixture", "files": []})

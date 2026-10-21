@@ -37,6 +37,7 @@ class Workspace:
         self.connection_status = None  # Last explicit root check in this process only.
         self.server_status = None  # Credential-free startup HTTPS check, never persisted.
         self.discovery_message = ""
+        self.manifest_copy_notice = ""
         self.state = {"schema_version": 1, "profile": {}, "downloads": {}, "manifest_path": "", "manifest_remote_path": SMASH_MANIFEST, "manifest_version": {}, "download_history": [], "active_db": "", "download_root": "", "download_roots": []}
         path = self.root / "state.json"
         if path.exists():
@@ -196,14 +197,26 @@ class Workspace:
     def retrieve_manifest(self, remote=None, progress=None):
         remote = remote_path(remote or self.state["manifest_remote_path"])
         destination = self.root / "manifests" / uuid.uuid4().hex
-        self.client().download(remote, destination, max_bytes=8 * 1024 * 1024, **({"progress": progress} if progress else {}))
+        def transfer_progress(count, total, phase="transfer"):
+            # A completed transfer is not yet a validated/usable catalogue.
+            progress(count, total, "validating" if phase == "complete" else phase)
+        receipt = self.client().download(remote, destination, max_bytes=8 * 1024 * 1024, **({"progress": transfer_progress} if progress else {}))
         path = destination / Path(remote).name
         manifest = load_manifest(path)
+        previous = {key: self.state[key] for key in ("manifest_path", "manifest_remote_path", "manifest_version")}
         self.state.update(manifest_path=str(path), manifest_remote_path=remote)
         receipt_path = destination / "download_receipt.json"
-        receipt = json.loads(receipt_path.read_text()) if receipt_path.is_file() else {}
+        receipt = json.loads(receipt_path.read_text()) if receipt_path.is_file() else receipt
         self.state["manifest_version"] = {"etag": receipt.get("etag"), "remote_path": remote, "cache_sha256": sha256(path)}
-        self.save()
+        try:
+            self.save()
+        except OSError:
+            self.state.update(previous)
+            raise
+        self.publish_manifest_copy()
+        if progress:
+            size = path.stat().st_size
+            progress(size, size, "complete")
         return manifest
 
     def use_manifest(self, source):
@@ -215,7 +228,38 @@ class Workspace:
         self.state["manifest_path"] = str(path)
         self.state["manifest_version"] = {}
         self.save()
+        self.publish_manifest_copy()
         return manifest
+
+    def publish_manifest_copy(self):
+        """Mirror only a validated cache into the confirmed download directory.
+
+        The private immutable cache remains authoritative for ETags/receipts.
+        Failure to write this convenience copy never discards a valid cache.
+        """
+        self.manifest_copy_notice = ""
+        if not self.state["download_root"] or not self.state["manifest_path"]:
+            return None
+        self.manifest()  # Verify both path containment and schema before copying.
+        source = Path(self.state["manifest_path"])
+        root = Path(self.state["download_root"]).resolve()
+        destination = root / "manifest.json"
+        temporary = root / (".manifest-" + uuid.uuid4().hex + ".part")
+        try:
+            if destination.is_symlink():
+                raise OSError("The manifest copy is a symbolic link")
+            with temporary.open("xb") as handle:
+                handle.write(source.read_bytes())
+            os.replace(temporary, destination)
+            return destination
+        except OSError:
+            self.manifest_copy_notice = "Manifest cache is ready, but the download-folder copy could not be saved. Check directory access."
+            return None
+        finally:
+            try:
+                temporary.unlink()
+            except OSError:
+                pass
 
     def _cached_path(self, record):
         path = Path(record["local_path"]).resolve()
@@ -239,6 +283,11 @@ class Workspace:
         if str(root) not in self.state["download_roots"]:
             self.state["download_roots"].append(str(root))
         self.save()
+        if self.state["manifest_path"]:
+            try:
+                self.publish_manifest_copy()
+            except (OSError, ValueError):
+                pass  # A failed old catalogue must not block choosing a folder.
         return root
 
     def _destination(self, remote, release="files"):

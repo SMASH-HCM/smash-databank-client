@@ -84,6 +84,10 @@ def retrieve_manifest(workspace, path=None, write=print, connection_checked=Fals
             write("Your previously loaded manifest is still available and has not been replaced.")
         return None
     write("Manifest ready: " + text(manifest["release"]) + " | " + str(len(manifest["files"])) + " files")
+    if workspace.manifest_copy_notice:
+        write(workspace.manifest_copy_notice)
+    elif workspace.state["download_root"]:
+        write("Manifest saved: " + text(Path(workspace.state["download_root"]) / "manifest.json"))
     return manifest
 
 
