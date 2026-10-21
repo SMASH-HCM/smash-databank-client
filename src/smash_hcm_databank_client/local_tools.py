@@ -141,7 +141,7 @@ def export_menu(workspace, read=input, write=print, plain=False):
             options["date_start"] = ask("Optional calendar start (YYYY-MM-DD, blank for none)", read=read, write=write, plain=plain) or None
             options["date_end"] = ask("Optional calendar end (YYYY-MM-DD, blank for none)", read=read, write=write, plain=plain) or None
             options["include_metadata"] = confirm("Include source value, fact ID/table, site and baseline-relative timing?", read, write, plain)
-        output = ask("DATA_DIR: dataset root", workspace.state.get("download_root") or str(Path.home()), read, write, plain, path=True).strip().strip('"')
+        output = ask("DATA_DIR: dataset root", str(workspace.suggested_download_root()), read, write, plain, path=True).strip().strip('"')
         if not output:
             return
         write("Generating " + fmt + " data using " + str(len(resolve_variables(database, keys))) + " frozen source variables...")
@@ -190,7 +190,7 @@ def reports_menu(workspace, read=input, write=print, plain=False):
             for row in report["two_site"]:
                 write(" | ".join(text(row[column]) for column in ("table", "concept_id", "concept_name", "site_pair")))
         if confirm("Save this report as JSON and CSV tables?", read, write, plain):
-            output = ask("DATA_DIR: reports will be saved under reports/", workspace.state.get("download_root") or str(Path.home()), read, write, plain, path=True).strip().strip('"')
+            output = ask("DATA_DIR: reports will be saved under reports/", str(workspace.suggested_download_root()), read, write, plain, path=True).strip().strip('"')
             if output:
                 workspace.set_download_root(output)
                 write_data_report(database, kind, output)

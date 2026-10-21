@@ -24,7 +24,7 @@ def test_banner_has_ascii_smash_url_and_local_version(tmp_path, omop_path):
     rendered = "\n".join(output)
     assert "SMASH-HCM DATABANK CLIENT" in rendered
     assert SMASH_URL in rendered
-    assert rendered.index("Local OMOP database:") > rendered.index("SMASH-HCM DATABANK CLIENT")
+    assert rendered.index("SMASH-HCM OMOP database:") > rendered.index("SMASH-HCM DATABANK CLIENT")
     assert "OMOP.db" in rendered
 
 

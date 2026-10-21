@@ -147,7 +147,7 @@ def test_menu_download_database_then_export_core_baseline(tmp_path, omop_path):
     client = FakeClient({"OMOP.db": payload})
     workspace = Workspace(tmp_path / "state", env_file(tmp_path), client_factory=lambda config: client)
     workspace.use_manifest(manifest_file(tmp_path, [entry("OMOP.db", payload, kind="database")]))
-    output, selected = [], iter(["5", "1", str(tmp_path / "data"), "y", "y", "9", "1", "1", "1", "1", str(tmp_path / "export"), "y", "0"])
+    output, selected = [], iter(["5", "1", "c", str(tmp_path / "data"), "y", "9", "1", "1", "1", "1", str(tmp_path / "export"), "y", "0"])
     assert run_menu(workspace, read=lambda prompt: next(selected), write=output.append) == 0
     assert (tmp_path / "export/FLORENCE/train.csv").exists()
     assert any("Export complete: 2 rows" in line for line in output)
@@ -160,7 +160,7 @@ def test_menu_cohort_modality_download_does_not_extract_archive(tmp_path):
     client = FakeClient({"rennes_ecg.zip": payload})
     workspace = Workspace(tmp_path / "state", env_file(tmp_path), client_factory=lambda config: client)
     workspace.use_manifest(manifest_file(tmp_path, [entry("rennes_ecg.zip", payload, cohorts=["rennes_all"], modality="ecg")]))
-    selected = iter(["6", "1", "1", str(tmp_path / "data"), "y", "y", "0"])
+    selected = iter(["6", "1", "1", "c", str(tmp_path / "data"), "y", "0"])
     assert run_menu(workspace, read=lambda prompt: next(selected), write=lambda value: None) == 0
     assert client.calls == ["rennes_ecg.zip"]
     assert len(list((tmp_path / "data").rglob("rennes_ecg.zip"))) == 1

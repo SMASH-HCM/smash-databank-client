@@ -2,6 +2,7 @@
 import sys
 import re
 import time
+from .console import is_console_writer, write_message
 
 
 def size_label(value):
@@ -48,19 +49,20 @@ class DownloadProgress:
         self._emit(line, terminal)
         self.final = terminal
 
-    def _emit(self, line, final):
-        if self.write is print:
+    def _emit(self, line, final, level=None):
+        if is_console_writer(self.write):
             tty = self.stream.isatty()
             if tty:
                 line = line + " " * max(0, self.last_width - len(line))
                 self.last_width = len(line)
-            self.stream.write(("\r" if tty else "") + line + ("\n" if final or not tty else ""))
-            self.stream.flush()
+            write_message(("\r" if tty else "") + line, level=level or ("success" if final else "info"), stream=self.stream, end="\n" if final or not tty else "")
         else:
             self.write(line)
 
     def __exit__(self, kind, value, traceback):
-        if kind:
-            self._emit(self.label + " | FAILED / cancelled; check the error before retrying", True)
+        if kind and issubclass(kind, (KeyboardInterrupt, EOFError)):
+            self._emit(self.label + " | CANCELLED; download stopped by user", True, "cancel")
+        elif kind:
+            self._emit(self.label + " | FAILED; check the error before retrying", True, "failure")
         elif not self.final:
             self._emit(self.label + " | complete", True)

@@ -23,13 +23,13 @@ from test_download_flow import answers
 def test_confirmed_directory_is_created_and_persisted_without_secrets(tmp_path):
     state = Workspace(tmp_path / "state", tmp_path / "absent.env")
     state.refresh_local()
-    assert "<unset>" in status_panel(state) and not state.root.exists()
+    assert "(default)" in status_panel(state) and not state.root.exists()
     chosen = tmp_path / "data"
     state.set_download_root(chosen)
     restored = Workspace(state.root, state.env_file)
     restored.refresh_local()
     assert restored.state["download_root"] == str(chosen) and chosen.is_dir()
-    assert "[OK]" in next(row for row in status_panel(restored).splitlines() if "Local directory:" in row)
+    assert "[OK]" in next(row for row in status_panel(restored).splitlines() if "Download location:" in row)
     assert "password" not in (state.root / "state.json").read_text()
 
 

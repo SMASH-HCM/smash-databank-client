@@ -65,7 +65,7 @@ def test_three_selected_cohorts_download_only_their_ecg_archives(tmp_path):
                 item("raw-dicom.zip", ["FLORENCE-TRAIN"], ["mri"], representation="dicom")]
     state, server = workspace(tmp_path, entries)
     destination, output = tmp_path / "chosen-data", []
-    results = download(state, "curated", read=answers("1,2,4", "1", str(destination), "y", "y"), write=output.append)
+    results = download(state, "curated", read=answers("1,2,4", "1", "c", str(destination), "y"), write=output.append)
     assert set(server.calls) == {"FLORENCE-TRAIN.zip", "FLORENCE-TEST.zip", "RENNES-TEST.zip"}
     assert len(results) == 3
     assert all(destination in Path(result["local_path"]).parents for result in results)
@@ -78,7 +78,7 @@ def test_download_published_core_csvs_without_local_omop(tmp_path):
     entries = [item(cohort + ".csv", [cohort], kind="tabular-export", variable_groups=["core"]) for cohort in ("FLORENCE-TRAIN", "FLORENCE-TEST")]
     entries.append(item("all-vars.csv", ["FLORENCE-TRAIN"], kind="tabular-export", variable_groups=["all"]))
     state, server = workspace(tmp_path, entries)
-    results = download(state, "tables", read=answers("3", "all", str(tmp_path / "csvs"), "y", "y"), write=lambda value: None)
+    results = download(state, "tables", read=answers("3", "all", "c", str(tmp_path / "csvs"), "y"), write=lambda value: None)
     assert len(results) == 2 and "all-vars.csv" not in server.calls
     assert not state.state["active_db"]
 
@@ -93,21 +93,20 @@ def test_shared_bundle_is_downloaded_once_and_missing_cohort_is_not_inferred():
         select_downloads(data, "curated", ["FLORENCE-TRAIN", "RENNES-TEST"], "ECG")
 
 
-def test_default_home_location_is_not_saved_or_created_without_confirmation(tmp_path, monkeypatch):
+def test_default_downloads_location_is_not_saved_or_created_without_confirmation(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path / "user-home"))
     state, server = workspace(tmp_path, [])
-    assert state.suggested_download_root() == tmp_path / "user-home/SMASH-HCM"
-    assert folder(state, read=answers("", "n"), write=lambda value: None) is None
+    assert state.suggested_download_root() == tmp_path / "Downloads"
+    assert folder(state, read=answers("n"), write=lambda value: None) is None
     assert state.state["download_root"] == ""
     assert not (tmp_path / "user-home").exists() and not server.calls
 
 
-def test_cancelled_batch_keeps_confirmed_directory_but_transfers_no_files(tmp_path):
+def test_cancelled_batch_does_not_save_changed_directory_or_transfer_files(tmp_path):
     state, server = workspace(tmp_path, [item("ecg.zip", ["rennes_test"], ["ecg"])])
     destination = tmp_path / "chosen-data"
-    assert not download(state, "curated", read=answers("1", "1", str(destination), "y", "n"), write=lambda value: None)
-    assert not server.calls and destination.is_dir()
-    assert [path.name for path in destination.iterdir()] == ["manifest.json"]  # Catalogue only; no data transfer.
+    assert not download(state, "curated", read=answers("1", "1", "c", str(destination), "n"), write=lambda value: None)
+    assert not server.calls and not destination.exists() and not state.state["download_root"]
 
 
 def test_changed_location_preserves_old_files_and_uses_new_location_on_request(tmp_path):
@@ -152,7 +151,7 @@ def test_partial_failure_does_not_discard_successful_downloads(tmp_path, monkeyp
         return original(remote, destination, **kwargs)
     monkeypatch.setattr(server, "download", interrupted)
     output = []
-    results = download(state, "curated", read=answers("1", "1", str(tmp_path / "data"), "y", "y"), write=output.append)
+    results = download(state, "curated", read=answers("1", "1", "c", str(tmp_path / "data"), "y"), write=output.append)
     assert len(results) == 1 and state.verify_local()[0]["status"] == "PASS"
     assert "Finished: 1 verified, 1 failed." in output
 

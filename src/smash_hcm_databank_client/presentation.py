@@ -8,6 +8,7 @@ import textwrap
 
 from .prompts import text
 from .settings import SMASH_DATABANK_URL
+from .console import is_console_writer
 
 
 def status_panel(workspace, width=None):
@@ -19,23 +20,28 @@ def status_panel(workspace, width=None):
             version, _, filename = info.partition(" | ")
             database = version if version != "version not recorded" else filename + " (version not recorded)"
     try:
-        manifest = workspace.manifest()["release"]
+        catalogue = workspace.manifest()
+        manifest = "schema " + catalogue["schema_version"] + " | " + catalogue["release"]
     except (OSError, ValueError):
         manifest = "<unavailable>"
     server = getattr(workspace, "server_status", None)
     connection = workspace.connection_status
-    reachable = connection if connection is not None else bool(server and server["available"])
-    detail = ("Databank login verified" if connection else "Databank login/access failed") if connection is not None else server["detail"] if server else "HTTPS not checked"
-    directory = workspace.state["download_root"]
+    reachable = bool(server and server["available"]) or connection is True
+    detail = server["detail"].replace("; login not checked", "") if server else "HTTPS not checked"
+    if connection is True and not (server and server["available"]):
+        detail = "HTTPS reachable"
+    login = "Verified" if connection is True else "Login/access failed" if connection is False else "Not checked"
+    directory = str(workspace.suggested_download_root())
     try:
         directory_ok = bool(directory and Path(directory).is_dir())
     except OSError:
         directory_ok = False
     rows = [
         ("SMASH-HCM Databank:", SMASH_DATABANK_URL + " | " + detail, reachable),
-        ("Local directory:", directory or "<unset>", directory_ok),
-        ("Local OMOP database:", database, database != "<unavailable>"),
-        ("Databank manifest:", manifest, manifest != "<unavailable>"),
+        ("Databank login:", login, connection is True),
+        ("Download location:", directory + (" (default)" if not workspace.state["download_root"] else ""), directory_ok),
+        ("SMASH-HCM Manifest:", manifest, manifest != "<unavailable>"),
+        ("SMASH-HCM OMOP database:", database, database != "<unavailable>"),
     ]
     inner = width - 4
     label_width = min(max(len(label) for label, _, _ in rows) + 2, inner - 10)
@@ -54,7 +60,7 @@ def status_panel(workspace, width=None):
 def write_status(workspace, write=print):
     """Use native console colors without counting escape sequences as columns."""
     panel = status_panel(workspace)
-    if write is not print or not sys.stdout.isatty() or os.environ.get("NO_COLOR"):
+    if not is_console_writer(write) or not sys.stdout.isatty() or os.environ.get("NO_COLOR"):
         write(panel)
         return
     try:

@@ -196,5 +196,6 @@ def main(argv=None):
         print(json.dumps(result, indent=2, allow_nan=False))
         return 2 if result.get("status") == "FAIL" else 0
     except (OSError, ValueError, KeyError, sqlite3.Error) as exc:
-        print("Error: " + str(exc), file=sys.stderr)
+        from .console import write_message
+        write_message("Error: " + str(exc), level="failure", stream=sys.stderr)
         return 2

@@ -25,6 +25,23 @@ def confirm(message, read=input, write=print, plain=False, default=False):
     return default if not answer else answer in ("y", "yes")
 
 
+def location_choice(message, read=input, write=print, plain=False):
+    """One confirmation with a change-path escape; Yes is the selected default."""
+    if menu_ui.arrow_ui(plain, read, write):
+        result = menu_ui.select(message, [("yes", "Yes", ""), ("no", "No", ""), ("change", "Change location", "")])
+        if result is None:
+            raise KeyboardInterrupt()
+        return result
+    answer = read(message + " [Y/n/change location]: ").strip().casefold()
+    if answer in ("", "y", "yes", "1"):
+        return "yes"
+    if answer in ("n", "no", "0", "2"):
+        return "no"
+    if answer in ("c", "change", "change location", "3"):
+        return "change"
+    raise NextcloudError("Choose Yes, No or Change location")
+
+
 def choose(entries, label, read=input, write=print, plain=False, disabled=None, message="Choose an option"):
     if not entries:
         raise NextcloudError("No matching entries are available")

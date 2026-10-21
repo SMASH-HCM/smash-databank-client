@@ -52,7 +52,7 @@ def test_manifest_file_folder_collision_is_rejected(tmp_path):
 def test_browser_downloads_direct_recursive_or_one_file(catalog, tmp_path, selection, expected):
     state, server = catalog
     output = []
-    results = browse(state, read=answers("4", "5", selection, str(tmp_path / "data"), "y", "y"), write=output.append)
+    results = browse(state, read=answers("4", "5", selection, "c", str(tmp_path / "data"), "y"), write=output.append)
     assert set(server.calls) == expected and len(results) == len(expected)
     assert all(row["status"] == "PASS" for row in state.verify_local())
     assert any("Download review:" in line for line in output)
@@ -61,7 +61,7 @@ def test_browser_downloads_direct_recursive_or_one_file(catalog, tmp_path, selec
 def test_browser_multiselect_and_parent_navigation(catalog, tmp_path):
     state, server = catalog
     # Root -> site -> parent -> site -> ecg -> select both immediate files.
-    results = browse(state, read=answers("4", "1", "4", "5", "4", "1,2", str(tmp_path / "data"), "y", "y"), write=lambda value: None)
+    results = browse(state, read=answers("4", "1", "4", "5", "4", "1,2", "c", str(tmp_path / "data"), "y"), write=lambda value: None)
     assert len(results) == 2 and set(server.calls) == {"site/ecg/test.zip", "site/ecg/train.zip"}
 
 
@@ -89,7 +89,7 @@ def test_root_and_setup_have_the_requested_options(catalog):
 def test_actual_plain_menu_uses_same_root_numbers_and_confirms_location(catalog, tmp_path):
     state, server = catalog
     output = []
-    assert run_menu(state, read=answers("1", "4", str(tmp_path / "chosen"), "y", "6"), write=output.append, plain=True) == 0
+    assert run_menu(state, read=answers("1", "4", "c", str(tmp_path / "chosen"), "y", "6"), write=output.append, plain=True) == 0
     assert state.state["download_root"] == str(tmp_path / "chosen")
     assert not server.calls
     assert any("SMASH-HCM DATABANK CLIENT" in line for line in output)
@@ -109,7 +109,7 @@ def test_status_box_stays_aligned_with_long_directory_and_shows_release(catalog,
     state.state["download_root"] = str(tmp_path / ("long-folder-" * 12))
     rendered = status_panel(state, width)
     assert all(len(line) == width and line.startswith("|") and line.endswith("|") for line in rendered.splitlines())
-    assert "Local directory:" in rendered and "Local OMOP database:" in rendered and "Databank manifest:" in rendered
+    assert "Download location:" in rendered and "SMASH-HCM OMOP database:" in rendered and "SMASH-HCM Manifest:" in rendered
     assert "<unavailable>" in rendered and "fixture" in rendered
     assert "SMASH-HCM Databank:" in rendered
     if width >= 80:
@@ -121,7 +121,7 @@ def test_cohorts_then_multiple_data_types_download_every_published_pair(tmp_path
     entries = [item(cohort + "-" + modality + ".zip", [cohort], [modality])
                for cohort in ("FLORENCE-TRAIN", "RENNES-TEST") for modality in ("ECG", "ECHO")]
     state, server = workspace(tmp_path, entries)
-    results = download(state, "curated", read=answers("all", "all", str(tmp_path / "data"), "y", "y"), write=lambda value: None)
+    results = download(state, "curated", read=answers("all", "all", "c", str(tmp_path / "data"), "y"), write=lambda value: None)
     assert len(results) == 4 and len(server.calls) == 4
 
 

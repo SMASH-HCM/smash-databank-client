@@ -60,6 +60,8 @@ For users who prefer no Python installation, see [portable application releases]
 
 Use `smash-hcm-databank-client setup` for hidden password entry and a choice of native OS vault, session-only or explicit plaintext `.env` storage. Run `smash-hcm-databank-client` or `smash-hcm-databank-client menu` afterwards. The [menu guide](MENU.md) covers database selection, version display, manifest-driven downloads and variable exports. Login setup does not alter an existing `.env` unless that storage choice is explicitly selected. [NEXTCLOUD.md](NEXTCLOUD.md) documents scripted access and the tested `databank/README.md` download. Network access does not need a local OMOP database. The core HTTP client uses the standard library; only native vault support needs the optional `secure` extra.
 
+New profiles suggest the OS Downloads folder, respecting a relocated Windows Downloads location. Previously saved download locations remain selected. Each download batch has one **Yes / No / Change location** confirmation, with Yes selected by default. The location is saved in nonsecret profile settings only after confirmation; it does not belong in the password vault.
+
 ## Optional historical PostgreSQL workflow
 
 This is a separate adapter for older dumps. Install it only in a local environment when needed:

@@ -71,24 +71,37 @@ def test_panel_checks_directory_presence_and_does_not_create_it(tmp_path, omop_p
     state.state["download_root"] = str(missing)
     rows = status_panel(state, 100).splitlines()
     assert "[OK]" in next(row for row in rows if "Databank:" in row)
-    assert "[NO]" in next(row for row in rows if "Local directory:" in row)
-    assert "[OK]" in next(row for row in rows if "Local OMOP database:" in row)
-    assert "[NO]" in next(row for row in rows if "Databank manifest:" in row)
+    assert "[NO]" in next(row for row in rows if "Download location:" in row)
+    assert "[OK]" in next(row for row in rows if "SMASH-HCM OMOP database:" in row)
+    assert "[NO]" in next(row for row in rows if "SMASH-HCM Manifest:" in row)
     assert not missing.exists()
     missing.mkdir()
-    assert "[OK]" in next(row for row in status_panel(state, 100).splitlines() if "Local directory:" in row)
+    assert "[OK]" in next(row for row in status_panel(state, 100).splitlines() if "Download location:" in row)
     omop_path.unlink()
-    assert "[NO]" in next(row for row in status_panel(state, 100).splitlines() if "Local OMOP database:" in row)
+    assert "[NO]" in next(row for row in status_panel(state, 100).splitlines() if "SMASH-HCM OMOP database:" in row)
 
 
-def test_authenticated_failure_overrides_server_reachability(tmp_path):
+def test_authenticated_failure_does_not_override_server_reachability(tmp_path):
     state = Workspace(tmp_path / "state", tmp_path / "absent.env")
     state.server_status = {"available": True, "detail": "HTTPS reachable; login not checked"}
     state.connection_status = False
     rendered = status_panel(state, 100)
-    assert "[NO]" in rendered.splitlines()[1] and "login/access failed" in rendered
+    assert "[OK]" in next(row for row in rendered.splitlines() if "SMASH-HCM Databank:" in row)
+    assert "[NO]" in next(row for row in rendered.splitlines() if "Databank login:" in row)
+    assert "Login/access failed" in rendered
     state.connection_status = True
-    assert "login verified" in status_panel(state, 100)
+    assert "[OK]" in next(row for row in status_panel(state, 100).splitlines() if "Databank login:" in row)
+
+
+def test_successful_login_establishes_connectivity_after_probe_timeout(tmp_path):
+    state = Workspace(tmp_path / "state", tmp_path / "absent.env")
+    state.server_status = {"available": False, "detail": "HTTPS check timed out"}
+    state.connection_status = True
+    rows = status_panel(state, 100).splitlines()
+    assert "[OK]" in next(row for row in rows if "SMASH-HCM Databank:" in row)
+    assert "[OK]" in next(row for row in rows if "Databank login:" in row)
+    assert "timed out" not in "\n".join(rows)
+    assert all(len(row) == 100 for row in rows)
 
 
 def test_real_menu_probes_once_before_first_status_and_offline_still_exits(tmp_path, monkeypatch):

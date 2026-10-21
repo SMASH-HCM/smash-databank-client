@@ -67,7 +67,8 @@ def actions(workspace):
 
 
 def arrow_ui(plain=False, read=input, write=print):
-    if plain or read is not input or write is not print or not sys.stdin.isatty() or not sys.stdout.isatty():
+    from .console import is_console_writer
+    if plain or read is not input or not is_console_writer(write) or not sys.stdin.isatty() or not sys.stdout.isatty():
         return False
     # Windows uses its console API, independently of the POSIX TERM hint.
     if sys.platform != "win32" and os.environ.get("TERM") == "dumb":

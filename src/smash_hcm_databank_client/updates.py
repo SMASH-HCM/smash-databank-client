@@ -6,7 +6,7 @@ import shutil
 import uuid
 
 from .database import sha256
-from .download_flow import folder, size_label
+from .download_flow import confirm_location, size_label
 from .manifest import ManifestError, is_database
 from .nextcloud import NextcloudError
 from .output import bundle, write_json
@@ -171,9 +171,8 @@ def check_updates(workspace, read=input, write=print, plain=False):
     retention = choose(["archive", "keep", "replace"], lambda value: {"archive": "Archive old versions (recommended)", "keep": "Keep old versions in place", "replace": "Replace: DELETE tracked old files after verification"}[value], read, write, plain, message="What should happen to the old versions?")
     if retention is None:
         return []
-    if not workspace.state["download_root"] and folder(workspace, read, write, plain) is None:
-        return []
-    if not confirm("Download " + str(len(selected)) + " updates and " + {"archive": "archive", "keep": "keep", "replace": "DELETE"}[retention] + " the tracked old versions after verification?", read, write, plain):
+    suffix = " | " + {"archive": "Archive", "keep": "Keep", "replace": "DELETE"}[retention] + " tracked old versions after verification"
+    if confirm_location(workspace, read, write, plain, message="Download these updates to:", suffix=suffix) is None:
         return []
     results = []
     for candidate in selected:

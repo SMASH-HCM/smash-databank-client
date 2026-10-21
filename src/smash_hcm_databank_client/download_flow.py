@@ -3,7 +3,7 @@ from pathlib import Path
 
 from .manifest import normalized, select_downloads
 from .nextcloud import NextcloudError
-from .prompts import ask, choose, choose_many, confirm, text
+from .prompts import ask, choose, choose_many, location_choice, text
 from .progress import DownloadProgress
 
 
@@ -16,16 +16,20 @@ def size_label(size):
 
 
 def folder(workspace, read=input, write=print, plain=False):
-    selected = ask("Download folder", str(workspace.suggested_download_root()), read, write, plain, path=True).strip().strip('"')
-    if not selected:
-        return None
-    path = Path(selected).expanduser().resolve()
-    write("Download location: " + text(path))
-    if not confirm("Use this download folder?", read, write, plain):
-        write("Download folder was not changed.")
-        return None
-    workspace.set_download_root(path)
-    return path
+    return confirm_location(workspace, read, write, plain, message="Use download location:")
+
+
+def confirm_location(workspace, read=input, write=print, plain=False, message="Download these files to:", suffix=""):
+    path = workspace.suggested_download_root()
+    while True:
+        answer = location_choice(message + " " + text(path) + suffix, read, write, plain)
+        if answer == "no":
+            write("Download cancelled; no files were transferred." if message.startswith("Download") else "Download location was not changed.")
+            return None
+        if answer == "yes":
+            return workspace.set_download_root(path)
+        selected = ask("Download location", str(path), read, write, plain, path=True).strip().strip('"')
+        path = Path(selected).expanduser().resolve()
 
 
 def tags(entries, key):
@@ -91,11 +95,8 @@ def review_download(workspace, entries, category="files", read=input, write=prin
         write(text(entry["path"]) + " | " + size_label(entry["size_bytes"]) + " | " + text(scope) + " | representation: " + text(representation))
     if category == "curated":
         write("Archives are downloaded as published. No patient filtering or automatic extraction is performed.")
-    location = folder(workspace, read, write, plain)
+    location = confirm_location(workspace, read, write, plain)
     if location is None:
-        return []
-    if not confirm("Download these files now?", read, write, plain):
-        write("Download cancelled; no files were transferred.")
         return []
     results, failed = [], []
     for number, entry in enumerate(entries, 1):

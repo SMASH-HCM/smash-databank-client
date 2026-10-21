@@ -14,6 +14,7 @@ from .manifest import is_database, load_manifest
 from .nextcloud import NextcloudClient, NextcloudConfig, NextcloudError, origin, remote_path
 from .output import write_json
 from .settings import SMASH_MANIFEST, SMASH_REMOTE_ROOT, SMASH_URL
+from .platform_paths import default_download_directory
 
 
 def default_state_dir():
@@ -269,7 +270,7 @@ class Workspace:
         return path
 
     def suggested_download_root(self):
-        return Path(self.state["download_root"]) if self.state["download_root"] else Path.home() / "SMASH-HCM"
+        return Path(self.state["download_root"]) if self.state["download_root"] else default_download_directory()
 
     def set_download_root(self, path):
         if not str(path).strip():

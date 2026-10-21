@@ -59,7 +59,7 @@ jobs:
                   assert details['native_vault'].startswith('keyring.backends.Windows.')
               result = subprocess.run([str(executable), 'menu', '--state-dir', str(pathlib.Path(directory) / 'state'), '--plain'], cwd=directory, input='0\n', text=True, capture_output=True, check=True)
               assert 'SMASH-HCM DATABANK CLIENT' in result.stdout
-              assert '[NO]' in result.stdout and '<unset>' in result.stdout
+              assert '[NO]' in result.stdout and '(default)' in result.stdout
               assert 'Local OMOP' in result.stdout
               assert 'Data Access Request' in result.stdout
       - uses: actions/upload-artifact@v4

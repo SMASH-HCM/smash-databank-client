@@ -14,7 +14,8 @@ from .settings import DATA_ACCESS_URL, SMASH_MANIFEST, SMASH_REMOTE_ROOT, SMASH_
 from .tabular import export_wide
 from .menu_ui import actions, arrow_ui, navigate, render_plain
 from .prompts import ask, choose, confirm, text
-from .download_flow import download, folder
+from .download_flow import download, folder, confirm_location
+from .console import console_write
 from .manifest_browser import browse
 from .presentation import write_status
 from .connectivity import probe_server
@@ -142,6 +143,8 @@ def setup(workspace, read=input, password_read=None, write=print, plain=False):
 
 
 def run_menu(workspace, initial_setup=False, read=input, password_read=None, write=print, plain=False, navigator=None):
+    if write is print:
+        write = console_write
     try:
         banner(workspace, write, startup=True)
         if initial_setup:
@@ -195,7 +198,7 @@ def run_menu(workspace, initial_setup=False, read=input, password_read=None, wri
                     browse(workspace, read, write, plain)
                 elif choice == "7":
                     path = read("File path relative to databank (e.g. README.md): ").strip()
-                    if folder(workspace, read, write, plain) is None or not confirm("Download this file now?", read, write, plain):
+                    if confirm_location(workspace, read, write, plain, message="Download this file to:") is None:
                         continue
                     write("Downloading " + text(path) + "...")
                     manifest = workspace.manifest() if workspace.state["manifest_path"] else None
