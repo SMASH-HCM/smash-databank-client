@@ -2,7 +2,7 @@
 from pathlib import Path
 import re
 
-from .database import OmopDatabase, sha256
+from .integrity import sha256
 from .nextcloud import NextcloudError
 
 
@@ -16,17 +16,12 @@ def database_format(path):
     if header.lstrip(b"\xef\xbb\xbf\r\n \t").startswith(b"--\n-- PostgreSQL database dump") or header.lstrip(b"\xef\xbb\xbf\r\n \t").startswith(b"--\r\n-- PostgreSQL database dump"):
         return "postgres-sql"
     if header.startswith(b"SQLite format 3\x00"):
-        return "sqlite"  # Explicit compatibility with earlier local snapshots.
+        raise NextcloudError("SQLite is unsupported; SMASH database releases must be PostgreSQL dumps")
     raise NextcloudError("Unrecognized database artifact; expected a PostgreSQL pg_dump archive (PGDMP) or SQL dump")
 
 
 def inspect_database(path):
-    kind = database_format(path)
-    if kind == "sqlite":
-        with OmopDatabase(path) as database:
-            if not database.capabilities()["persons"]:
-                raise NextcloudError("This file does not contain an OMOP person table")
-    return kind
+    return database_format(path)
 
 
 def validate_dump(path, expected_sha256=None, expected_size=None):

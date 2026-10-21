@@ -46,6 +46,10 @@ def download(workspace, category, read=input, write=print, plain=False):
         if chosen is None:
             return []
         entries = [chosen]
+    elif category == "reports":
+        entries = choose_many(entries, lambda item: item["path"] + " | " + size_label(item["size_bytes"]), read, write, plain, message="Select summary reports")
+        if not entries:
+            return []
     else:
         variable_group = None
         if category == "curated":
@@ -93,7 +97,7 @@ def review_download(workspace, entries, category="files", read=input, write=prin
         scope = ", ".join(entry["cohorts"]) or "whole release"
         representation = entry.get("representation") or "not specified"
         write(text(entry["path"]) + " | " + size_label(entry["size_bytes"]) + " | " + text(scope) + " | representation: " + text(representation))
-    if category == "curated":
+    if any(entry["path"].lower().endswith(".zip") for entry in entries):
         write("Archives are downloaded as published. No patient filtering or automatic extraction is performed.")
     location = confirm_location(workspace, read, write, plain)
     if location is None:

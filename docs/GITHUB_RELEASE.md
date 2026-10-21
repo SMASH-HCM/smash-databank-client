@@ -1,14 +1,14 @@
 # Preparing a GitHub release
 
-The canonical repository is **[SMASH-HCM/smash-hcm-databank-client](https://github.com/SMASH-HCM/smash-hcm-databank-client)**, with default branch `main`. Display name: **SMASH-HCM Databank Client**. The package and public command are `smash-hcm-databank-client`; the analysis implementation stays in `smash_hcm_databank_client`, with `python -m smash_hcm_databank_client` as the public module entry point. Existing local checkout folders can retain their old name.
+The canonical repository is **[SMASH-HCM/smash-hcm-databank-client](https://github.com/SMASH-HCM/smash-hcm-databank-client)**, with default branch `main`. Display name: **SMASH-HCM Databank Client**. The package and public command are `smash-hcm-databank-client`; the download implementation is `smash_hcm_databank_client`, with `python -m smash_hcm_databank_client` as the public module entry point. Existing local checkout folders can retain their old name.
 
-Workflows use `github.repository` rather than hard-coded repository URLs. The client covers downloads, reports and cohort exports; its distribution, portable executable and repository use the same name.
+Workflows use `github.repository` rather than hard-coded repository URLs. The client downloads published datasets/reports and validates bytes; PostgreSQL generation belongs to digitaltwin_moe; its distribution, portable executable and repository use the same name.
 
 ## Automatic release candidate on every main push
 
 **Main release candidate** runs on each push to `main`. It first runs the reusable contract/package test matrix, then native Windows, Linux, Apple Silicon and Intel Mac builds and executable checks. The Python wheel/source package is built and smoke-tested too. Only after all tests/builds and all six artifact checksums pass does it publish a GitHub prerelease. It never marks that candidate as latest stable.
 
-For base version `0.12.1`, run 42 and source commit `abcdef0…`, the GitHub tag is `v0.12.1-rc.42.abcdef0` and the installed package reports `0.12.1rc42`. Version patching happens only in the CI checkout. The generated tag targets the exact source commit, which is also recorded in build metadata. Each main push has a new candidate identity; published candidates are preserved on reruns. Incomplete drafts from the same run/commit can resume their upload. Failed checks do not produce a published candidate.
+For base version `0.12.1`, run 42 and source commit `abcdef0â€¦`, the GitHub tag is `v0.12.1-rc.42.abcdef0` and the installed package reports `0.12.1rc42`. Version patching happens only in the CI checkout. The generated tag targets the exact source commit, which is also recorded in build metadata. Each main push has a new candidate identity; published candidates are preserved on reruns. Incomplete drafts from the same run/commit can resume their upload. Failed checks do not produce a published candidate.
 
 Pull requests/other branches run checks without publishing. Every main push requests all native jobs, including two Mac runners; organisation runner availability/billing policies apply. No clinical data or Nextcloud passwords are CI inputs. Only publication jobs have `contents: write`; tests/builds are read-only.
 
@@ -41,7 +41,7 @@ The workflow tests/builds native Windows, Linux, Apple Silicon Mac and Intel Mac
 
 2. Review `git status` and commit the intended public code, tests, examples, documentation and workflows. Building locally does not commit files. Keep real `.env`, application state, databases, exports and downloads out of the commit. The builders use public-file allowlists; review the Git index separately.
 
-3. For version **0.12.1**, check `pyproject.toml` and `src/smash_hcm_databank_client/__init__.py` both declare it. Push the reviewed commit to main and review **Actions → Main release candidate**, including its nested contract/build jobs.
+3. For version **0.12.1**, check `pyproject.toml` and `src/smash_hcm_databank_client/__init__.py` both declare it. Push the reviewed commit to main and review **Actions â†’ Main release candidate**, including its nested contract/build jobs.
 
 4. Create an annotated tag at the reviewed commit and push it:
 
@@ -52,7 +52,7 @@ The workflow tests/builds native Windows, Linux, Apple Silicon Mac and Intel Mac
 
    Do not retarget an already published release tag. Fixes should get a new version/tag.
 
-5. On GitHub, open **Actions → Prepare draft release → Run workflow**. Enter `v0.12.1`. The workflow requires an existing tag matching the package version, runs synthetic tests on each native platform, builds/smoke-tests the binaries and Python package, verifies asset checksums, then creates a **draft prerelease**. It stops if that release already exists; it does not overwrite it or publish automatically. No Nextcloud credentials or clinical files are CI inputs.
+5. On GitHub, open **Actions â†’ Prepare draft release â†’ Run workflow**. Enter `v0.12.1`. The workflow requires an existing tag matching the package version, runs synthetic tests on each native platform, builds/smoke-tests the binaries and Python package, verifies asset checksums, then creates a **draft prerelease**. It stops if that release already exists; it does not overwrite it or publish automatically. No Nextcloud credentials or clinical files are CI inputs.
 
 6. Open the draft under **Releases**. Review the release notes, platform job results and attached assets. Test a downloaded ZIP/wheel on the intended operating systems, check its `.sha256`, and confirm the examples describe current limitations. For a first client release, keeping it marked prerelease is reasonable. Click **Publish release** when satisfied.
 

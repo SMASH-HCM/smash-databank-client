@@ -1,3 +1,0 @@
-# Optional SQLite YAML config: install .[config]. JSON and --db need no extra dependency.
-# Historical PostgreSQL example: config.postgres.example.yaml.
-db: ./data/OMOP.db

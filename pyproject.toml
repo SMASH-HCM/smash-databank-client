@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "smash-hcm-databank-client"
-version = "0.12.3"
-description = "SMASH-HCM Databank Client: downloads, SQLite inspection and reproducible cohort exports"
+version = "0.13.0"
+description = "Download and verify published SMASH-HCM databank datasets"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = []
@@ -16,11 +16,9 @@ Repository = "https://github.com/SMASH-HCM/smash-hcm-databank-client"
 Issues = "https://github.com/SMASH-HCM/smash-hcm-databank-client/issues"
 
 [project.optional-dependencies]
-config = ["PyYAML>=6,<7"]
 secure = ["keyring>=25,<26"]
 ui = ["questionary>=2,<3"]
-binary = ["questionary>=2,<3", "keyring>=25,<26", "PyYAML>=6,<7", "pyinstaller>=6,<7"]
-postgres = ["PyYAML>=6,<7", "psycopg[binary]>=3.1,<4"]
+binary = ["questionary>=2,<3", "keyring>=25,<26", "pyinstaller>=6,<7"]
 dev = ["pytest>=7.4,<9", "build>=1.2,<2"]
 
 [project.scripts]
@@ -34,12 +32,12 @@ where = ["src"]
 include = ["smash_hcm_databank_client*"]
 
 [tool.setuptools.package-data]
-smash_hcm_databank_client = ["resources/*.sql", "resources/*.yaml", "resources/*.txt", "legacy/*.sql"]
+smash_hcm_databank_client = ["resources/*.txt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
 markers = [
-  "integration: read-only tests of an external OMOP database selected with --omop-db",
+  "integration: optional tests requiring an external service",
   "future: executable contracts for a planned feature (strict expected failure until implemented)",
 ]

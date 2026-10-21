@@ -111,7 +111,7 @@ def test_real_menu_probes_once_before_first_status_and_offline_still_exits(tmp_p
         return {"available": False, "detail": "HTTPS check timed out"}
     monkeypatch.setattr("smash_hcm_databank_client.menu.probe_server", probe)
     state = Workspace(tmp_path / "state", tmp_path / "absent.env")
-    assert run_menu(state, read=lambda _: "6", write=output.append, plain=True) == 0
+    assert run_menu(state, read=lambda _: "5", write=output.append, plain=True) == 0
     assert len(calls) == 1 and "timed out" in "\n".join(output)
     assert not state.root.exists()  # Startup never saves credentials/state or creates folders.
 

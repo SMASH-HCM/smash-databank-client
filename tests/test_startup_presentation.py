@@ -27,7 +27,7 @@ def test_login_and_connectivity_complete_before_first_panel_and_not_repeated(tmp
     monkeypatch.setattr("smash_hcm_databank_client.menu.check_login", check_login)
     monkeypatch.setattr("smash_hcm_databank_client.menu.startup_updates", startup_updates)
     monkeypatch.setattr("smash_hcm_databank_client.menu.probe_server", lambda: {"available": True, "detail": "HTTPS reachable"})
-    messages, supplied = [], iter(["n", "6"])
+    messages, supplied = [], iter(["n", "5"])
     assert run_menu(state, read=lambda prompt: next(supplied), write=messages.append, plain=True) == 0
     panel_index = next(i for i, line in enumerate(messages) if line.startswith("|"))
     assert messages.index("Databank connectivity: SUCCESS") < panel_index

@@ -114,15 +114,6 @@ def test_menu_connection_uses_injected_client_and_no_secret_output(tmp_path, mon
     assert any("Connection: SUCCESS" in line for line in output)
 
 
-def test_partial_database_can_export_core_events_without_cohort_catalog(tmp_path, omop_path):
-    import sqlite3
-    with sqlite3.connect(omop_path) as connection:
-        connection.executescript("DELETE FROM cohort; DELETE FROM cohort_definition; DELETE FROM smash_endpoint_censor;")
-    workspace = Workspace(tmp_path / "state", tmp_path / "missing.env", db_path=omop_path)
-    output = tmp_path / "events"
-    assert run_menu(workspace, read=answers("9", "1", "2", "1", "all", "", "", "n", str(output), "y", "0"), write=lambda value: None) == 0
-    manifest = json.loads((output / "event_stream/ALL-PEOPLE/dataset_manifest.json").read_text())
-    assert manifest["cohort_id"] is None and manifest["rows"] == 3
 
 
 def test_password_prompt_never_falls_back_to_echo(monkeypatch):

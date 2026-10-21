@@ -5,7 +5,7 @@ from pathlib import Path
 import shutil
 import uuid
 
-from .database import sha256
+from .integrity import sha256
 from .download_flow import confirm_location, size_label
 from .manifest import ManifestError, is_database
 from .nextcloud import NextcloudError

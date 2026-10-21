@@ -60,7 +60,8 @@ jobs:
               result = subprocess.run([str(executable), 'menu', '--state-dir', str(pathlib.Path(directory) / 'state'), '--plain'], cwd=directory, input='0\n', text=True, capture_output=True, check=True)
               assert 'SMASH-HCM DATABANK CLIENT' in result.stdout
               assert '[NO]' in result.stdout and '(default)' in result.stdout
-              assert 'Local OMOP' in result.stdout
+              assert 'Local OMOP' not in result.stdout
+              assert '2. > Download' in result.stdout
               assert 'Data Access Request' in result.stdout
       - uses: actions/upload-artifact@v4
         with:

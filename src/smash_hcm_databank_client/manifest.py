@@ -146,6 +146,12 @@ def artifact_type(entry):
     if is_database(entry):
         return "database"
     kind = normalized(entry.get("kind", ""))
+    if kind in {"event-stream", "events", "event-export"}:
+        return "events"
+    if kind in {"report", "summary-report"}:
+        return "reports"
+    if kind == "dataset-file":
+        return "other"  # Individual companion files remain browsable.
     path = entry["path"].casefold()
     if kind in {"table", "tabular", "tabular-export", "csv", "training-table"} or path.endswith((".csv", ".csv.gz")):
         return "tables"
@@ -157,8 +163,8 @@ def artifact_type(entry):
 
 def select_downloads(manifest, category, cohorts=(), modality=None, variable_group=None, modalities=()):
     """OR across explicitly selected cohorts, AND with type/modality/variable set."""
-    if category not in {"database", "tables", "curated"}:
-        raise NextcloudError("Choose database, tables or curated data")
+    if category not in {"database", "tables", "events", "reports", "curated"}:
+        raise NextcloudError("Choose database, tables, events, reports or curated data")
     requested = {normalized(cohort) for cohort in cohorts}
     requested_types = {normalized(value) for value in modalities}
     if modality:

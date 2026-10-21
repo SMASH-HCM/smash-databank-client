@@ -43,8 +43,6 @@ def test_download_registers_and_caches_pg_dump_without_sqlite_or_psycopg(tmp_pat
     workspace.use_manifest(manifest_file(tmp_path, [entry("SMASH_v1.4_rc5.db", DUMP, kind="database")]))
     def forbidden(*args):
         pytest.fail("PostgreSQL dump must never be opened as SQLite")
-    monkeypatch.setattr("smash_hcm_databank_client.workspace.OmopDatabase", forbidden)
-    monkeypatch.setattr("smash_hcm_databank_client.database_artifacts.OmopDatabase", forbidden)
     phases = []
     downloaded = workspace.download_entry(workspace.manifest()["files"][0], lambda n, total, phase: phases.append(phase))
     assert phases == ["validating", "complete"]
@@ -52,7 +50,7 @@ def test_download_registers_and_caches_pg_dump_without_sqlite_or_psycopg(tmp_pat
     assert workspace.database_available() and workspace.database_is_dump()
     assert "PostgreSQL dump" in status_panel(workspace, 100)
     assert next(item for item in actions(workspace) if item.key == "12").enabled
-    assert all(not item.enabled and "restore" in item.reason for item in actions(workspace) if item.group == "Local OMOP")
+    assert not any(item.group == "Local OMOP" for item in actions(workspace))
     assert workspace.verify_local()[0]["status"] == "PASS"
     assert workspace.download_entry(workspace.manifest()["files"][0])["status"] == "CACHED"
     assert server.calls == ["SMASH_v1.4_rc5.db"]
@@ -100,11 +98,9 @@ def test_dump_cli_validation_and_analysis_restore_message(tmp_path, capsys):
     assert json.loads(capsys.readouterr().out)["database_format"] == "postgres-custom"
     assert main(["validate", "--db", str(path), "--sha256", "0" * 64]) == 2
     assert json.loads(capsys.readouterr().out)["status"] == "FAIL"
-    assert main(["validate", "--db", str(path), "--require-capability", "cohorts"]) == 2
-    assert json.loads(capsys.readouterr().out)["status"] == "FAIL"
-    assert main(["report", "inventory", "--db", str(path), "--out", str(tmp_path / "reports")]) == 2
-    message = capsys.readouterr().err
-    assert "Restore into PostgreSQL" in message and "SQLite" not in message
+    with pytest.raises(SystemExit) as exc:
+        main(["report", "inventory", "--db", str(path)])
+    assert exc.value.code == 2
 
 
 def test_validate_menu_uses_dump_receipt_without_opening_sqlite(tmp_path, monkeypatch):
@@ -112,7 +108,6 @@ def test_validate_menu_uses_dump_receipt_without_opening_sqlite(tmp_path, monkey
     workspace, server = configured(tmp_path, old=DUMP, path="OMOP.db", kind="database")
     def forbidden(*args):
         pytest.fail("Dump validation must not call SQLite")
-    monkeypatch.setattr("smash_hcm_databank_client.menu.OmopDatabase", forbidden)
     messages, supplied = [], iter(["12", "0"])
     dispatch_menu(workspace, read=lambda prompt: next(supplied), write=messages.append)
     assert "Database validation: PASS" in messages

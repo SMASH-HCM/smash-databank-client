@@ -1,7 +1,6 @@
 import hashlib
 import json
 from pathlib import Path
-import sqlite3
 
 import pytest
 
@@ -226,8 +225,7 @@ def test_new_database_is_validated_before_retiring_active_old_database(tmp_path,
 def test_valid_database_update_activates_new_copy_and_keeps_archived_old(tmp_path, omop_path):
     workspace, server = configured(tmp_path, old=omop_path.read_bytes(), path="OMOP.db", kind="database")
     old = workspace.state["active_db"]
-    with sqlite3.connect(omop_path) as connection:
-        connection.execute("INSERT INTO concept VALUES (999,'new metadata')")
+    omop_path.write_bytes(omop_path.read_bytes() + b"new metadata")
     candidate = publish(workspace, server, omop_path.read_bytes(), "v2/OMOP.db", kind="database")
     result = apply_update(workspace, candidate, "archive")
     assert workspace.state["active_db"] == result["local_path"] != old
@@ -289,6 +287,6 @@ def test_menu_runs_startup_flow_after_initial_setup(tmp_path, monkeypatch):
     seen = []
     monkeypatch.setattr("smash_hcm_databank_client.menu.startup_updates", lambda workspace, *args: seen.append(workspace.session.username))
     workspace = Workspace(tmp_path / "state", tmp_path / "missing.env")
-    supplied = iter(["fixture", "2", "6"])
+    supplied = iter(["fixture", "2", "5"])
     assert run_menu(workspace, initial_setup=True, read=lambda prompt: next(supplied), password_read=lambda prompt: "fake-password", write=lambda value: None, plain=True) == 0
     assert seen == ["fixture"]

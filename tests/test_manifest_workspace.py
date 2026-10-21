@@ -141,16 +141,15 @@ def test_verify_existing_folder_against_manifest_without_login(tmp_path):
     assert workspace.verify_folder(folder)[0]["status"] == "FAIL"
 
 
-def test_menu_download_database_then_export_core_baseline(tmp_path, omop_path):
+def test_menu_download_dump_then_validate_bytes(tmp_path, omop_path):
     from menu_helpers import dispatch_menu as run_menu
     payload = omop_path.read_bytes()
     client = FakeClient({"OMOP.db": payload})
     workspace = Workspace(tmp_path / "state", env_file(tmp_path), client_factory=lambda config: client)
     workspace.use_manifest(manifest_file(tmp_path, [entry("OMOP.db", payload, kind="database")]))
-    output, selected = [], iter(["5", "1", "c", str(tmp_path / "data"), "y", "9", "1", "1", "1", "1", str(tmp_path / "export"), "y", "0"])
+    output, selected = [], iter(["5", "1", "c", str(tmp_path / "data"), "y", "12", "0"])
     assert run_menu(workspace, read=lambda prompt: next(selected), write=output.append) == 0
-    assert (tmp_path / "export/FLORENCE/train.csv").exists()
-    assert any("Export complete: 2 rows" in line for line in output)
+    assert "Database validation: PASS" in output
     assert any("fixture-v1" in line for line in output)
 
 

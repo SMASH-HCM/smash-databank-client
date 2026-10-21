@@ -1,7 +1,7 @@
 """Local asset integrity primitives; format/clinical acceptance remains separate."""
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
-from .database import sha256
+from .integrity import sha256
 
 
 def resolve_asset(root, relative_path):

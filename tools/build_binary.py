@@ -33,8 +33,8 @@ def build(output):
     env = dict(os.environ, PYINSTALLER_CONFIG_DIR=str(ROOT / "build/pyinstaller-cache"))
     command = [sys.executable, "-m", "PyInstaller", "--console", "--noupx", "--name", "smash-hcm-databank-client",
                "--onedir", "--distpath", str(work / "dist"), "--workpath", str(work / "work"),
-               "--specpath", str(work), "--paths", str(ROOT / "src"), "--hidden-import", "keyring", "--hidden-import", "yaml",
-               "--collect-data", "smash_hcm_databank_client", "--exclude-module", "psycopg", "--exclude-module", "pandas",
+               "--specpath", str(work), "--paths", str(ROOT / "src"), "--hidden-import", "keyring",
+               "--collect-data", "smash_hcm_databank_client", "--exclude-module", "psycopg", "--exclude-module", "pandas", "--exclude-module", "sqlite3", "--exclude-module", "_sqlite3",
                "--exclude-module", "numpy", "--exclude-module", "tkinter", str(ROOT / "tools/binary_entry.py")]
     subprocess.run(command, cwd=ROOT, env=env, check=True)
     executable = "smash-hcm-databank-client.exe" if sys.platform == "win32" else "smash-hcm-databank-client"
@@ -45,18 +45,14 @@ def build(output):
     dump_guide = release / "docs/POSTGRES_DUMPS.md"
     dump_guide.parent.mkdir(exist_ok=True)
     shutil.copy2(ROOT / "docs/POSTGRES_DUMPS.md", dump_guide)
-    for filename in ("README.md", "MENU.md", "NEXTCLOUD.md", "BINARY_RELEASES.md", "LOCAL_OMOP.md", "BASELINE_AVAILABILITY.md", "DATABASE_CONTRACT.md", "DATASET_EXPORTS.md", "TABULAR_TUTORIAL.md", "MULTIMODAL_TUTORIAL.md", "INDEXING_AND_LANDMARKS.md", "UPDATES.md", "SETUP.md", "GITHUB_RELEASE.md", "TESTING.md", "STATUS_AND_IMPLEMENTATION_PLAN.md", "LEGACY_POSTGRES_WORKFLOW.md", "EXPORT_METHODOLOGY.md", "RC4_VALIDATION_2026-10-18.md", "RC4_DATABASE_AGENT_FEEDBACK_2026-10-18.md", "RC4_FORMAT_CHANGE_2026-10-19.md"):
+    for filename in ("README.md", "MENU.md", "NEXTCLOUD.md", "BINARY_RELEASES.md", "UPDATES.md", "SETUP.md", "GITHUB_RELEASE.md", "TESTING.md", "ARCHITECTURE.md", "RELEASE_0.13.0.md"):
         destination = release / "docs" / filename
         destination.parent.mkdir(exist_ok=True)
         shutil.copy2(ROOT / "docs" / filename, destination)
-    for filename in ("clinical_variables.json", "prepare_multimodal.py"):
-        destination = release / "examples" / filename
-        destination.parent.mkdir(exist_ok=True)
-        shutil.copy2(ROOT / "examples" / filename, destination)
     notices = []
     distributions = sorted(importlib.metadata.distributions(), key=lambda item: item.metadata.get("Name", "").lower())
     # License texts for dependencies actually present in the frozen app, not dev tools.
-    included = {"pyinstaller", "questionary", "prompt-toolkit", "pygments", "wcwidth", "keyring", "pyyaml", "pywin32-ctypes", "platformdirs", "importlib-metadata", "zipp", "more-itertools", "jaraco.classes", "jaraco.context", "jaraco.functools", "backports.tarfile", "jeepney", "secretstorage", "cryptography", "cffi", "pycparser"}
+    included = {"pyinstaller", "questionary", "prompt-toolkit", "pygments", "wcwidth", "keyring", "pywin32-ctypes", "platformdirs", "importlib-metadata", "zipp", "more-itertools", "jaraco.classes", "jaraco.context", "jaraco.functools", "backports.tarfile", "jeepney", "secretstorage", "cryptography", "cffi", "pycparser"}
     for distribution in distributions:
         package = distribution.metadata.get("Name", "")
         if package.lower().replace("_", "-") not in included:
@@ -73,8 +69,8 @@ def build(output):
     (release / "THIRD_PARTY_NOTICES.txt").write_text("\n".join(notices), encoding="utf-8")
     details = {"version": version, "source_commit": os.environ.get("GITHUB_SHA"), "platform": platform.system(), "architecture": platform.machine(), "python": platform.python_version(),
                "pyinstaller": importlib.metadata.version("pyinstaller"), "mode": "onedir",
-               "built_at_utc": datetime.now(timezone.utc).isoformat(), "includes": ["Python runtime", "SQLite", "HTTPS client", "Questionary", "keyring native backend", "PyYAML"],
-               "excludes": ["credentials", "databases", "downloads", "local state", "PostgreSQL adapter"]}
+               "built_at_utc": datetime.now(timezone.utc).isoformat(), "includes": ["Python runtime", "HTTPS client", "Questionary", "keyring native backend"],
+               "excludes": ["credentials", "databases", "downloads", "local state", "PostgreSQL adapter", "SQLite analysis", "model training"]}
     (release / "build-info.json").write_text(json.dumps(details, indent=2) + "\n", encoding="utf-8")
     files = sorted(path for path in release.rglob("*") if path.is_file())
     for path in files:

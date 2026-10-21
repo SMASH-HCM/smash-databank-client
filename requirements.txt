@@ -1,2 +1,2 @@
-# Install the SQLite client; dependency versions live in pyproject.toml.
+# Install the download client; dependency versions live in pyproject.toml.
 .

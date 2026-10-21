@@ -26,7 +26,7 @@ def test_prerequisites_change_without_network_or_vault_access(tmp_path, omop_pat
     workspace.state["profile"] = {"credential_storage": "vault", "username": "fixture"}
     assert indexed(workspace)["2"].enabled
     workspace.register_database(omop_path)
-    assert indexed(workspace)["12"].enabled and indexed(workspace)["9"].enabled
+    assert indexed(workspace)["12"].enabled
     source = tmp_path / "manifest.json"
     source.write_text(json.dumps({"schema_version": 1, "release": "fixture", "files": [
         {"path": "OMOP.db", "kind": "database", "size_bytes": 10, "sha256": "0" * 64},

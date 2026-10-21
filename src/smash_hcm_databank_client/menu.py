@@ -1,18 +1,14 @@
 """Interactive SMASH setup and data menu, backed by the same tested APIs."""
 import getpass
 from pathlib import Path
-import sqlite3
 import sys
 import warnings
 import webbrowser
 
 from .credentials import env_credentials, load_vault, native_vault, save_env, save_vault
-from .database import OmopDatabase
 from .database_artifacts import validate_dump
-from .exports import export_events
 from .nextcloud import NextcloudConfig, NextcloudError
 from .settings import DATA_ACCESS_URL, SMASH_MANIFEST, SMASH_REMOTE_ROOT, SMASH_URL, terminal_logo
-from .tabular import export_wide
 from .menu_ui import actions, arrow_ui, navigate, render_plain
 from .prompts import ask, choose, confirm, text
 from .download_flow import download, folder, confirm_location
@@ -20,8 +16,6 @@ from .console import console_write
 from .manifest_browser import browse
 from .presentation import write_status
 from .connectivity import probe_server
-from .validation import validate_database
-from .local_tools import export_menu, reports_menu, variables_menu
 from .progress import DownloadProgress
 from .updates import startup_updates, check_login
 
@@ -197,8 +191,8 @@ def run_menu(workspace, initial_setup=False, read=input, password_read=None, wri
                         write("No downloaded files or local database are registered yet.")
                     for row in rows:
                         write(text(row["status"]) + " | " + text(row["path"]) + " | " + text(row.get("detail", "")) + " | reference: " + text(row["reference"]))
-                elif choice in ("5", "6", "13"):
-                    download(workspace, {"5": "database", "6": "curated", "13": "tables"}[choice], read, write, plain)
+                elif choice in ("5", "6", "13", "22", "23"):
+                    download(workspace, {"5": "database", "6": "curated", "13": "tables", "22": "events", "23": "reports"}[choice], read, write, plain)
                 elif choice == "16":
                     browse(workspace, read, write, plain)
                 elif choice == "7":
@@ -214,14 +208,8 @@ def run_menu(workspace, initial_setup=False, read=input, password_read=None, wri
                     if not matches:
                         write("Receipt checksum recorded; no independent manifest hash was supplied.")
                 elif choice == "8":
-                    workspace.register_database(ask("Local OMOP database path", read=read, write=write, plain=plain, path=True).strip().strip('"'))
-                    write("Local OMOP database selected.")
-                elif choice == "9":
-                    export_menu(workspace, read, write, plain)
-                elif choice == "19":
-                    reports_menu(workspace, read, write, plain)
-                elif choice == "20":
-                    variables_menu(workspace, read, write, plain)
+                    workspace.register_database(ask("Local PostgreSQL dump path", read=read, write=write, plain=plain, path=True).strip().strip('"'))
+                    write("PostgreSQL dump selected for byte validation.")
                 elif choice == "10":
                     manifest = workspace.use_manifest(ask("Local manifest JSON path", read=read, write=write, plain=plain, path=True).strip().strip('"'))
                     write("Manifest ready: " + text(manifest["release"]) + " | " + str(len(manifest["files"])) + " files")
@@ -245,15 +233,10 @@ def run_menu(workspace, initial_setup=False, read=input, password_read=None, wri
                     if not opened:
                         write("Open this link in your browser to complete the access request.")
                 elif choice == "12":
-                    if workspace.database_is_dump():
-                        write("Checking PostgreSQL dump signature and file integrity...")
-                        active = workspace.state["active_db"]
-                        expected = workspace.database_reference()
-                        result = validate_dump(active, expected.get("sha256"), expected.get("size_bytes"))
-                    else:
-                        write("Checking local snapshot integrity, person links and database capabilities...")
-                        with OmopDatabase(workspace.state["active_db"]) as database:
-                            result = validate_database(database)
+                    write("Checking PostgreSQL dump signature and file integrity...")
+                    active = workspace.state["active_db"]
+                    expected = workspace.database_reference()
+                    result = validate_dump(active, expected.get("sha256"), expected.get("size_bytes"))
                     write("Database validation: " + result["status"])
                     for check in result["checks"]:
                         write(text(check["status"]) + " | " + text(check["check"]))
@@ -261,7 +244,7 @@ def run_menu(workspace, initial_setup=False, read=input, password_read=None, wri
                     write(result["scope"])
                 else:
                     write("Choose a listed option, or 0 to exit.")
-            except (ValueError, OSError, KeyError, sqlite3.Error) as exc:
+            except (ValueError, OSError, KeyError) as exc:
                 write("Could not complete that option: " + text(exc))
     except (EOFError, KeyboardInterrupt):
         write("\nSMASH menu closed.")

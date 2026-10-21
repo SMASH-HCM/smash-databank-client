@@ -80,7 +80,7 @@ def test_root_and_setup_have_the_requested_options(catalog):
         return next(responses)
     assert navigate(actions(state), selector) == "0"
     assert seen[0][0] == "SMASH-HCM Databank Menu"
-    assert [entry[1] for entry in seen[0][1]] == ["1. > Setup", "2. > Download", "3. > Local OMOP", "4. > Validate", "5. > Data Access Request", "6. > Exit"]
+    assert [entry[1] for entry in seen[0][1]] == ["1. > Setup", "2. > Download", "3. > Validate", "4. > Data Access Request", "5. > Exit"]
     assert [entry[1] for entry in seen[1][1]][:4] == ["Setup / Change User Login", "Check Databank Connection", "Retrieve manifest", "Select Download location"]
     assert seen[1][1][4][1] == "Check for data updates"
     assert len(seen[1][1]) == 6  # Five setup actions plus Back.
@@ -89,7 +89,7 @@ def test_root_and_setup_have_the_requested_options(catalog):
 def test_actual_plain_menu_uses_same_root_numbers_and_confirms_location(catalog, tmp_path):
     state, server = catalog
     output = []
-    assert run_menu(state, read=answers("1", "4", "c", str(tmp_path / "chosen"), "y", "6"), write=output.append, plain=True) == 0
+    assert run_menu(state, read=answers("1", "4", "c", str(tmp_path / "chosen"), "y", "5"), write=output.append, plain=True) == 0
     assert state.state["download_root"] == str(tmp_path / "chosen")
     assert not server.calls
     assert any("SMASH-HCM DATABANK CLIENT" in line for line in output)
@@ -99,7 +99,7 @@ def test_plain_root_access_request_is_option_five(catalog, monkeypatch):
     state, _ = catalog
     opened = []
     monkeypatch.setattr("smash_hcm_databank_client.menu.webbrowser.open", lambda url, new: opened.append(url) or True)
-    run_menu(state, read=answers("5", "6"), write=lambda value: None, plain=True)
+    run_menu(state, read=answers("4", "5"), write=lambda value: None, plain=True)
     assert opened == [DATA_ACCESS_URL]
 
 

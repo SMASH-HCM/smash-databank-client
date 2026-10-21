@@ -73,7 +73,7 @@ jobs:
               print('Candidate already exists; preserving its published artifacts.')
           else:
               notes = pathlib.Path('candidate-notes.md')
-              notes.write_text('SMASH-HCM Databank Client release candidate\n\nBuilt from main commit ' + commit + '. Tests and native Windows, Linux, Apple Silicon/Intel Mac builds passed before publication.\n\nThis is a testing prerelease; it does not replace the latest stable release. Application data and passwords are excluded. Mac binaries are unsigned/not notarized.\n\nSee docs/UPDATES.md and docs/DATASET_EXPORTS.md for setup, data updates and prediction-time caveats.\n', encoding='utf-8')
+              notes.write_text('SMASH-HCM Databank Client release candidate\n\nBuilt from main commit ' + commit + '. Tests and native Windows, Linux, Apple Silicon/Intel Mac builds passed before publication.\n\nThis is a testing prerelease; it does not replace the latest stable release. Application data and passwords are excluded. Mac binaries are unsigned/not notarized.\n\nSee docs/MENU.md, docs/UPDATES.md and docs/ARCHITECTURE.md for setup, published dataset downloads and the PostgreSQL publisher in digitaltwin_moe.\n', encoding='utf-8')
               if details is not None:
                   if details['targetCommitish'] != commit:
                       raise SystemExit('Existing draft points to a different source commit')

@@ -47,5 +47,4 @@ jobs:
               command = env / ('Scripts/smash-hcm-databank-client.exe' if sys.platform == 'win32' else 'bin/smash-hcm-databank-client')
               subprocess.run([str(command), '--version'], cwd=root, check=True)
               assert not (env / ('Scripts/omop-exporter.exe' if sys.platform == 'win32' else 'bin/omop-exporter')).exists()
-              subprocess.run([str(python), '-m', 'smash_hcm_databank_client.legacy.main', '--help'], cwd=root, check=True)
-              subprocess.run([str(python), '-c', 'from smash_hcm_databank_client.legacy import main; assert len(main.COPY_RE.findall(main.SQL_PATH.read_text())) == 7'], cwd=root, check=True)
+              subprocess.run([str(python), '-c', "import smash_hcm_databank_client.cli,sys; assert 'sqlite3' not in sys.modules; assert 'psycopg' not in sys.modules"], cwd=root, check=True)

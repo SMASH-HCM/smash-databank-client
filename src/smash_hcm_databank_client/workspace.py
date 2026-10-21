@@ -2,14 +2,13 @@
 import json
 import os
 import re
-import sqlite3
 import sys
 from pathlib import Path
 import uuid
 
 from .credentials import env_credentials, load_vault
 from .assets import validate_asset
-from .database import OmopDatabase, sha256
+from .integrity import sha256
 from .manifest import is_database, load_manifest
 from .nextcloud import NextcloudClient, NextcloudConfig, NextcloudError, origin, remote_path
 from .output import write_json
@@ -110,7 +109,7 @@ class Workspace:
         try:
             inspect_database(self.state["active_db"])
             return True
-        except (OSError, ValueError, sqlite3.Error):
+        except (OSError, ValueError):
             return False
 
     def database_is_dump(self):
@@ -164,7 +163,7 @@ class Workspace:
             try:
                 inspect_database(candidate)
                 valid.append(candidate)
-            except (OSError, ValueError, sqlite3.Error):
+            except (OSError, ValueError):
                 pass
         valid = sorted(set(valid))
         if len(valid) == 1:
@@ -423,12 +422,8 @@ class Workspace:
         if not path:
             return "Not downloaded or selected"
         try:
-            if self.database_is_dump():
-                inspect_database(path)
-                release = None
-            else:
-                with OmopDatabase(path) as database:
-                    release = database.release_metadata().get("release")
+            inspect_database(path)
+            release = None
             if not release:
                 for record in self.state["downloads"].values():
                     if record.get("local_path") == path:
@@ -437,5 +432,5 @@ class Workspace:
             if not release and self.database_is_dump() and re.search(r"v\d", Path(path).stem, re.I):
                 release = Path(path).stem
             return str(release or "version not recorded") + " | " + Path(path).name
-        except (OSError, ValueError, sqlite3.Error):
+        except (OSError, ValueError):
             return "Selected database is unavailable: " + Path(path).name

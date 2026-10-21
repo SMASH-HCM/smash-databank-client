@@ -40,23 +40,21 @@ def actions(workspace):
     login_reason = "" if login else "Set up a login first"
     database = workspace.database_available()
     artifact_reason = "" if database else "Download or select a local database first"
-    db_reason = "PostgreSQL dump available; restore into PostgreSQL and use the optional PostgreSQL analysis workflow" if database and workspace.database_is_dump() else artifact_reason
     download_reason = manifest_reason or login_reason
     def available(category, reason):
-        return download_reason or ("" if any(artifact_type(item) == category and (category == "database" or item["cohorts"]) for item in manifest["files"]) else reason)
+        return download_reason or ("" if any(artifact_type(item) == category and (category in ("database", "reports") or item["cohorts"]) for item in manifest["files"]) else reason)
     return [
         Action("1", "Setup / Change User Login", "Setup"),
         Action("2", "Check Databank Connection", "Setup", login_reason),
         Action("3", "Retrieve manifest", "Setup", login_reason),
         Action("14", "Select Download location", "Setup"),
         Action("21", "Check for data updates", "Setup", login_reason),
-        Action("5", "Download OMOP db", "Download", available("database", "Manifest has no database entries")),
         Action("13", "Download train / test CSVs", "Download", available("tables", "Manifest has no published CSV datasets")),
+        Action("22", "Download event-stream datasets", "Download", available("events", "Manifest has no published event-stream datasets")),
+        Action("23", "Download summary reports", "Download", available("reports", "Manifest has no published summary reports")),
         Action("6", "Download cohort ZIP files (MRI / Echo / ECG)", "Download", available("curated", "Manifest has no published cohort data bundles")),
+        Action("5", "Download OMOP PostgreSQL dump (advanced)", "Download", available("database", "Manifest has no database entries")),
         Action("16", "Download specific file(s) / folder", "Download", download_reason or ("" if manifest["files"] else "Manifest has no files")),
-        Action("9", "Export tabular / event datasets", "Local OMOP", db_reason),
-        Action("19", "View / save summary reports", "Local OMOP", db_reason),
-        Action("20", "Create / reuse variable sets", "Local OMOP", db_reason),
         Action("4", "Validate downloaded files", "Validate", "" if workspace.state["downloads"] else "Download some files first"),
         Action("12", "Validate local OMOP database", "Validate", artifact_reason),
         Action("18", "Validate an existing folder against manifest", "Validate", manifest_reason),

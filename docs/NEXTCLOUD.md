@@ -111,7 +111,7 @@ A real manifest is now published on Nextcloud. The 0.12.1 fix was tested against
 
 After validation, the client keeps its authoritative copy under the local settings directory's `manifests/<ID>/` cache, and atomically saves a convenient **`manifest.json` in the confirmed download directory**. It prints that location. A failed validation cannot replace the previous valid cache or visible copy. If the download directory is unavailable/locked, a warning explains that the valid private cache remains usable. Selecting a new download directory copies the current valid catalogue there; an unchanged-ETag update check also repairs a missing visible copy without another transfer.
 
-Use immutable versioned paths for release artifacts. Downloading a server-generated folder ZIP is less reproducible than downloading a finalized archive with a recorded hash. Menu option 3 retrieves `manifest.json` (or another entered relative path), and option 10 loads a local copy. Database and cohort/modality downloads verify size/hash automatically, then become available for local integrity checks and offline cache reuse. See [MENU.md](MENU.md) for the complete workflow and baseline export constraints.
+Use immutable versioned paths for release artifacts. Downloading a server-generated folder ZIP is less reproducible than downloading a finalized archive with a recorded hash. Menu option 3 retrieves `manifest.json` (or another entered relative path), and option 10 loads a local copy. Database and cohort/modality downloads verify size/hash automatically, then become available for local integrity checks and offline cache reuse. See [MENU.md](MENU.md) for the download-only workflow; PostgreSQL generation is in digitaltwin_moe.
 
 ## Troubleshooting
 
