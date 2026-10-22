@@ -95,7 +95,7 @@ def test_plain_output_has_status_without_requiring_color(tmp_path):
     output = []
     render_plain(actions(Workspace(tmp_path / "state", tmp_path / ".env")), output.append)
     assert any("Data Access Request" in line and "AVAILABLE" in line for line in output)
-    assert any("Download OMOP" in line and "UNAVAILABLE" in line for line in output)
+    assert any("Harmonized OMOP PostgreSQL dump (advanced)" in line and "UNAVAILABLE" in line for line in output)
     assert not any("\033" in line for line in output)
 
 

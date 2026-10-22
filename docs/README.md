@@ -7,6 +7,7 @@ The SMASH-HCM Databank Client downloads and verifies published artifacts only.
 | Installation | [SETUP.md](SETUP.md) |
 | Menu and downloads | [MENU.md](MENU.md) |
 | Login, WebDAV and manifest | [NEXTCLOUD.md](NEXTCLOUD.md) |
+| Manifest categories, preprocessing and comments | [MANIFEST.md](MANIFEST.md) |
 | Updates, keep/archive/replace | [UPDATES.md](UPDATES.md) |
 | Portable applications | [BINARY_RELEASES.md](BINARY_RELEASES.md) |
 | GitHub release candidates | [GITHUB_RELEASE.md](GITHUB_RELEASE.md) |

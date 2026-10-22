@@ -191,8 +191,8 @@ def run_menu(workspace, initial_setup=False, read=input, password_read=None, wri
                         write("No downloaded files or local database are registered yet.")
                     for row in rows:
                         write(text(row["status"]) + " | " + text(row["path"]) + " | " + text(row.get("detail", "")) + " | reference: " + text(row["reference"]))
-                elif choice in ("5", "6", "13", "22", "23"):
-                    download(workspace, {"5": "database", "6": "curated", "13": "tables", "22": "events", "23": "reports"}[choice], read, write, plain)
+                elif choice in ("5", "6", "13", "22", "23", "24"):
+                    download(workspace, {"5": "database", "6": "curated", "13": "tables", "22": "events", "23": "reports", "24": "etl"}[choice], read, write, plain)
                 elif choice == "16":
                     browse(workspace, read, write, plain)
                 elif choice == "7":

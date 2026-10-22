@@ -52,7 +52,7 @@ def test_manifest_file_folder_collision_is_rejected(tmp_path):
 def test_browser_downloads_direct_recursive_or_one_file(catalog, tmp_path, selection, expected):
     state, server = catalog
     output = []
-    results = browse(state, read=answers("4", "5", selection, "c", str(tmp_path / "data"), "y"), write=output.append)
+    results = browse(state, read=answers("2", "5", selection, "c", str(tmp_path / "data"), "y"), write=output.append)
     assert set(server.calls) == expected and len(results) == len(expected)
     assert all(row["status"] == "PASS" for row in state.verify_local())
     assert any("Download review:" in line for line in output)
@@ -61,7 +61,7 @@ def test_browser_downloads_direct_recursive_or_one_file(catalog, tmp_path, selec
 def test_browser_multiselect_and_parent_navigation(catalog, tmp_path):
     state, server = catalog
     # Root -> site -> parent -> site -> ecg -> select both immediate files.
-    results = browse(state, read=answers("4", "1", "4", "5", "4", "1,2", "c", str(tmp_path / "data"), "y"), write=lambda value: None)
+    results = browse(state, read=answers("2", "1", "2", "5", "4", "1,2", "c", str(tmp_path / "data"), "y"), write=lambda value: None)
     assert len(results) == 2 and set(server.calls) == {"site/ecg/test.zip", "site/ecg/train.zip"}
 
 
@@ -109,8 +109,8 @@ def test_status_box_stays_aligned_with_long_directory_and_shows_release(catalog,
     state.state["download_root"] = str(tmp_path / ("long-folder-" * 12))
     rendered = status_panel(state, width)
     assert all(len(line) == width and line.startswith("|") and line.endswith("|") for line in rendered.splitlines())
-    assert "Download location:" in rendered and "SMASH-HCM OMOP database:" in rendered and "SMASH-HCM Manifest:" in rendered
-    assert "<unavailable>" in rendered and "fixture" in rendered
+    assert "Download location:" in rendered and "SMASH-HCM OMOP database:" not in rendered and "SMASH-HCM Manifest:" in rendered
+    assert "fixture" in rendered
     assert "SMASH-HCM Databank:" in rendered
     if width >= 80:
         assert SMASH_DATABANK_URL in rendered

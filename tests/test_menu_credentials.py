@@ -24,14 +24,14 @@ def test_banner_has_ascii_smash_url_and_local_version(tmp_path, omop_path):
     rendered = "\n".join(output)
     assert "SMASH-HCM DATABANK CLIENT" in rendered
     assert SMASH_URL in rendered
-    assert rendered.index("SMASH-HCM OMOP database:") > rendered.index("SMASH-HCM DATABANK CLIENT")
-    assert "OMOP.db" in rendered
+    assert "SMASH-HCM OMOP database:" not in rendered
+    assert "OMOP.db" not in rendered
 
 
 def test_menu_exits_without_credentials_or_network(tmp_path):
     output = []
     assert run_menu(Workspace(tmp_path / "state", tmp_path / "missing.env"), read=answers("0"), write=output.append) == 0
-    assert any("Download OMOP" in line for line in output)
+    assert any("Harmonized OMOP PostgreSQL dump (advanced)" in line for line in output)
 
 
 def test_menu_missing_manifest_keeps_other_options_available(tmp_path):

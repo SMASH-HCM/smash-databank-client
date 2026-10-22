@@ -1,12 +1,154 @@
 {
   "schema_version": "1.0",
-  "release": "example",
+  "release": "EXAMPLE_REPLACE_SIZES_AND_HASHES",
+  "comment": "Illustrative only. Replace sizes and SHA-256 with real stored-file values before publishing.",
+  "directories": [
+    {
+      "path": "cohorts",
+      "type": "directory",
+      "kind": "cohort-summary",
+      "comment": "Cohort definitions, summary tables and general landmarks"
+    },
+    {
+      "path": "smash-etl",
+      "type": "directory",
+      "kind": "etl-output",
+      "comment": "Advanced ETL outputs"
+    },
+    {
+      "path": "zips",
+      "type": "directory",
+      "comment": "Choose individual cohort archives"
+    },
+    {
+      "path": "curated/FLORENCE/Clinical",
+      "type": "directory",
+      "comment": "Clinical CSV files; narrower-folder bulk download allowed"
+    }
+  ],
   "files": [
     {
-      "path": "README.md",
-      "size_bytes": 586,
-      "sha256": "9cb38b348beb23f7094dd8956995d36257dcbe1d9325468a8114208f6776b468",
-      "kind": "documentation"
+      "path": "clinical/v1.4/FLORENCE/baseline/train.csv",
+      "size_bytes": 123456,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "kind": "clinical-data",
+      "role": "features",
+      "comment": "Exact baseline-day features",
+      "cohorts": [
+        "FLORENCE-TRAIN"
+      ],
+      "variable_groups": [
+        "shared-clinical"
+      ],
+      "preprocessing": "baseline",
+      "split": "train",
+      "representation": "csv"
+    },
+    {
+      "path": "clinical/v1.4/FLORENCE/baseline/train-landmarks.csv",
+      "size_bytes": 123456,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "kind": "clinical-data",
+      "role": "landmarks",
+      "comment": "Indices matching train.csv",
+      "cohorts": [
+        "FLORENCE-TRAIN"
+      ],
+      "variable_groups": [
+        "shared-clinical"
+      ],
+      "preprocessing": "baseline",
+      "split": "train",
+      "representation": "csv"
+    },
+    {
+      "path": "clinical/v1.4/FLORENCE/history-730d/train.csv",
+      "size_bytes": 123456,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "kind": "clinical-data",
+      "cohorts": [
+        "FLORENCE-TRAIN"
+      ],
+      "variable_groups": [
+        "shared-clinical"
+      ],
+      "preprocessing": "history-730d",
+      "split": "train",
+      "representation": "csv",
+      "comment": "Explicit two-year history; see feature definitions"
+    },
+    {
+      "path": "zips/FLORENCE_PILOT_ECG_mat.zip",
+      "size_bytes": 123456,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "kind": "curated-bundle",
+      "cohorts": [
+        "FLORENCE-PILOT"
+      ],
+      "modalities": [
+        "ECG"
+      ],
+      "representation": "mat.zip",
+      "comment": ".mat files included for reference"
+    },
+    {
+      "path": "zips/FLORENCE_PILOT_ECG_npz.zip",
+      "size_bytes": 123456,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "kind": "curated-bundle",
+      "cohorts": [
+        "FLORENCE-PILOT"
+      ],
+      "modalities": [
+        "ECG"
+      ],
+      "representation": "npz.zip",
+      "comment": ""
+    },
+    {
+      "path": "event_stream/v1.4/FLORENCE/train.zip",
+      "size_bytes": 123456,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "kind": "event-stream",
+      "cohorts": [
+        "FLORENCE-TRAIN"
+      ],
+      "variable_groups": [
+        "shared-clinical"
+      ],
+      "preprocessing": "baseline-events",
+      "representation": "csv.zip",
+      "comment": "Baseline boundary and availability mask in companion metadata"
+    },
+    {
+      "path": "cohorts/v1.4/cohort_summary.csv",
+      "size_bytes": 123456,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "kind": "cohort-summary",
+      "comment": "Cohort membership summary"
+    },
+    {
+      "path": "cohorts/v1.4/cohort_landmarks.csv",
+      "size_bytes": 123456,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "kind": "cohort-summary",
+      "comment": "General cohort landmark ledger"
+    },
+    {
+      "path": "SMASH_v1.4_rc5.db",
+      "size_bytes": 123456,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "kind": "omop-database",
+      "version": "SMASH_v1.4_rc5",
+      "artifact_id": "omop.database",
+      "comment": "Restore separately into PostgreSQL for analysis"
+    },
+    {
+      "path": "smash-etl/reports/etl_summary.json",
+      "size_bytes": 123456,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "kind": "etl-output",
+      "comment": "ETL output; not a prepared modelling dataset"
     }
   ]
 }

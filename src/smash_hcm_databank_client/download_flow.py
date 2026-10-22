@@ -5,14 +5,7 @@ from .manifest import normalized, select_downloads
 from .nextcloud import NextcloudError
 from .prompts import ask, choose, choose_many, location_choice, text
 from .progress import DownloadProgress
-
-
-def size_label(size):
-    value = float(size)
-    for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
-        if value < 1024 or unit == "TiB":
-            return (str(int(value)) if unit == "B" else f"{value:.1f}") + " " + unit
-        value /= 1024
+from .listing import size_label, file_labels, table_labels
 
 
 def folder(workspace, read=input, write=print, plain=False):
@@ -42,12 +35,15 @@ def download(workspace, category, read=input, write=print, plain=False):
     if not entries:
         raise NextcloudError("The manifest has no published files in this category")
     if category == "database":
-        chosen = choose(entries, lambda item: item["path"] + " | " + size_label(item["size_bytes"]), read, write, plain, message="Choose the OMOP database release")
+        labels = file_labels(entries)
+        chosen = choose(entries, lambda item: labels[item["path"]], read, write, plain, message="Choose the OMOP database release")
         if chosen is None:
             return []
         entries = [chosen]
-    elif category == "reports":
-        entries = choose_many(entries, lambda item: item["path"] + " | " + size_label(item["size_bytes"]), read, write, plain, message="Select summary reports")
+    elif category in ("reports", "etl"):
+        labels = file_labels(entries)
+        entries = choose_many(entries, lambda item: labels[item["path"]], read, write, plain,
+                              message="Select cohort summaries / landmark tables" if category == "reports" else "Select SMASH-HCM ETL output")
         if not entries:
             return []
     else:
@@ -71,7 +67,7 @@ def download(workspace, category, read=input, write=print, plain=False):
             groups = tags(entries, "variable_groups")
             if groups:
                 options = ["Any published variable set"] + groups
-                group = choose(options, str, read, write, plain, message="Choose the variables included in the published CSVs")
+                group = choose(options, str, read, write, plain, message="Choose the published variable set")
                 if group is None:
                     return []
                 variable_group = None if group == options[0] else group
@@ -81,6 +77,12 @@ def download(workspace, category, read=input, write=print, plain=False):
                 write("No cohorts selected; download cancelled.")
                 return []
             entries = select_downloads(manifest, category, cohorts, variable_group=variable_group)
+            if any(entry.get("preprocessing") for entry in entries):
+                formats = sorted({entry.get("preprocessing", "unspecified") for entry in entries})
+                selected_formats = choose_many(formats, str, read, write, plain, message="Select preprocessing format(s)")
+                if not selected_formats:
+                    return []
+                entries = select_downloads(manifest, category, cohorts, variable_group=variable_group, preprocessing=selected_formats)
         write("Selected cohorts: " + ", ".join(cohorts))
     return review_download(workspace, entries, category, read, write, plain)
 
@@ -93,10 +95,14 @@ def review_download(workspace, entries, category="files", read=input, write=prin
         raise NextcloudError("No manifest files were selected")
     write("Release: " + text(manifest["release"]))
     write("Download review: " + str(len(entries)) + " files | " + size_label(sum(item["size_bytes"] for item in entries)))
+    rows = [("File", "Size", "Cohorts", "Representation", "Preprocessing", "Comment")]
     for entry in entries:
         scope = ", ".join(entry["cohorts"]) or "whole release"
         representation = entry.get("representation") or "not specified"
-        write(text(entry["path"]) + " | " + size_label(entry["size_bytes"]) + " | " + text(scope) + " | representation: " + text(representation))
+        rows.append((entry["path"], size_label(entry["size_bytes"]), scope, representation,
+                     entry.get("preprocessing", "not specified"), entry.get("comment", "")))
+    for line in table_labels(rows):
+        write(line)
     if any(entry["path"].lower().endswith(".zip") for entry in entries):
         write("Archives are downloaded as published. No patient filtering or automatic extraction is performed.")
     location = confirm_location(workspace, read, write, plain)

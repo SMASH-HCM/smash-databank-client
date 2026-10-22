@@ -42,18 +42,19 @@ def actions(workspace):
     artifact_reason = "" if database else "Download or select a local database first"
     download_reason = manifest_reason or login_reason
     def available(category, reason):
-        return download_reason or ("" if any(artifact_type(item) == category and (category in ("database", "reports") or item["cohorts"]) for item in manifest["files"]) else reason)
+        return download_reason or ("" if any(artifact_type(item) == category and (category in ("database", "reports", "etl") or item["cohorts"]) for item in manifest["files"]) else reason)
     return [
         Action("1", "Setup / Change User Login", "Setup"),
         Action("2", "Check Databank Connection", "Setup", login_reason),
         Action("3", "Retrieve manifest", "Setup", login_reason),
         Action("14", "Select Download location", "Setup"),
         Action("21", "Check for data updates", "Setup", login_reason),
-        Action("13", "Download train / test CSVs", "Download", available("tables", "Manifest has no published CSV datasets")),
-        Action("22", "Download event-stream datasets", "Download", available("events", "Manifest has no published event-stream datasets")),
-        Action("23", "Download summary reports", "Download", available("reports", "Manifest has no published summary reports")),
-        Action("6", "Download cohort ZIP files (MRI / Echo / ECG)", "Download", available("curated", "Manifest has no published cohort data bundles")),
-        Action("5", "Download OMOP PostgreSQL dump (advanced)", "Download", available("database", "Manifest has no database entries")),
+        Action("13", "Cohort clinical data", "Download", available("tables", "Manifest has no published cohort clinical data")),
+        Action("6", "Cohort data bundles (MRI / Echo / ECG)", "Download", available("curated", "Manifest has no published cohort data bundles")),
+        Action("22", "Cohort event stream datasets", "Download", available("events", "Manifest has no published event-stream datasets")),
+        Action("23", "Cohort summaries", "Download", available("reports", "Manifest has no published cohort summaries")),
+        Action("5", "Harmonized OMOP PostgreSQL dump (advanced)", "Download", available("database", "Manifest has no database entries")),
+        Action("24", "SMASH-HCM ETL output (advanced)", "Download", available("etl", "Manifest has no published ETL output")),
         Action("16", "Download specific file(s) / folder", "Download", download_reason or ("" if manifest["files"] else "Manifest has no files")),
         Action("4", "Validate downloaded files", "Validate", "" if workspace.state["downloads"] else "Download some files first"),
         Action("12", "Validate local OMOP database", "Validate", artifact_reason),

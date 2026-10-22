@@ -76,8 +76,11 @@ def validate_manifest(data):
         release = Path(database_path).stem if database_path else data.get("generated_utc")
     if not isinstance(release, str) or not release.strip():
         raise ManifestError("Manifest needs a release name, database filename or generation date")
+    extra_directories = data.get("directories", [])
+    if not isinstance(extra_directories, list) or any(not isinstance(item, dict) or item.get("type", "directory") != "directory" for item in extra_directories):
+        raise ManifestError("Manifest directories must be a list of directory metadata records")
     seen, identities, files, directories = set(), set(), [], []
-    for entry in source:
+    for entry in source + [{**item, "type": "directory"} for item in extra_directories]:
         if not isinstance(entry, dict) or not isinstance(entry.get("path"), str):
             raise ManifestError("Each manifest entry needs a relative path")
         try:
@@ -87,19 +90,23 @@ def validate_manifest(data):
         if not path or path in seen:
             raise ManifestError("Manifest entry paths must be nonempty and unique")
         seen.add(path)
+        kind = entry.get("type", "file")
+        if kind not in ("file", "directory"):
+            raise ManifestError("Manifest entry type must be file or directory")
+        if any(not isinstance(entry[key], str) for key in ("comment", "kind", "preprocessing", "role") if key in entry):
+            raise ManifestError("Manifest comment/kind/preprocessing/role must be strings")
+        if "preprocessing" in entry and not entry["preprocessing"].strip():
+            raise ManifestError("Manifest preprocessing must be a nonempty string when supplied")
+        if kind == "directory":
+            # Optional metadata only; directory digests are not file checksums.
+            directories.append({**entry, "path": path, "type": "directory"})
+            continue
         size, checksum = entry.get("size_bytes"), entry.get("sha256")
         if not isinstance(size, int) or isinstance(size, bool) or size < 0:
             raise ManifestError("Each manifest entry needs a nonnegative integer size_bytes")
         if not isinstance(checksum, str) or not re.fullmatch(r"[a-fA-F0-9]{64}", checksum):
             raise ManifestError("Each manifest entry needs a SHA-256 checksum")
         item = {**entry, "path": path, "sha256": checksum.lower()}
-        kind = item.get("type", "file")
-        if kind not in ("file", "directory"):
-            raise ManifestError("Manifest entry type must be file or directory")
-        if kind == "directory":
-            # Its hash covers directory records, not downloadable file bytes.
-            directories.append(item)
-            continue
         if item.get("hash_scope") not in (None, "file_bytes", "full_file_bytes", "stored_file_bytes"):
             raise ManifestError("File SHA-256 must cover stored file bytes, not directory records")
         if path == database_path:
@@ -130,10 +137,17 @@ def validate_manifest(data):
         files.append(item)
     if database_path is not None and not any(item["path"] == database_path for item in files):
         raise ManifestError("Manifest database reference is absent from the downloadable files")
+    for item in files:
+        if "kind" not in item:
+            parents = [folder for folder in directories if folder.get("kind") and item["path"].startswith(folder["path"] + "/")]
+            if parents:
+                item["kind"] = max(parents, key=lambda folder: len(folder["path"]))["kind"]
     result = {key: value for key, value in data.items() if key != "entries"}
     result.update(schema_version=version, release=release.strip(), files=files)
     if catalogue:
-        result.update(source_layout="entries", directories=directories)
+        result["source_layout"] = "entries"
+    if catalogue or "directories" in data:
+        result["directories"] = directories
     return result
 
 
@@ -146,13 +160,24 @@ def artifact_type(entry):
     if is_database(entry):
         return "database"
     kind = normalized(entry.get("kind", ""))
-    if kind in {"event-stream", "events", "event-export"}:
+    if kind in {"event-stream", "events", "event-export", "cohort-events"}:
         return "events"
-    if kind in {"report", "summary-report"}:
+    if kind in {"report", "summary-report", "cohort-summary"}:
         return "reports"
+    if kind == "etl-output":
+        return "etl"
+    if kind == "curated-bundle":
+        return "curated"
+    if kind in {"clinical-data", "clinical-landmarks"}:
+        return "tables"
     if kind == "dataset-file":
         return "other"  # Individual companion files remain browsable.
     path = entry["path"].casefold()
+    # Legacy untagged catalogues: classify publication areas, never membership.
+    if not kind and path.startswith("cohorts/"):
+        return "reports"
+    if not kind and path.startswith("smash-etl/"):
+        return "etl"
     if kind in {"table", "tabular", "tabular-export", "csv", "training-table"} or path.endswith((".csv", ".csv.gz")):
         return "tables"
     representation = normalized(entry.get("representation", ""))
@@ -161,10 +186,10 @@ def artifact_type(entry):
     return "other"
 
 
-def select_downloads(manifest, category, cohorts=(), modality=None, variable_group=None, modalities=()):
+def select_downloads(manifest, category, cohorts=(), modality=None, variable_group=None, modalities=(), preprocessing=()):
     """OR across explicitly selected cohorts, AND with type/modality/variable set."""
-    if category not in {"database", "tables", "events", "reports", "curated"}:
-        raise NextcloudError("Choose database, tables, events, reports or curated data")
+    if category not in {"database", "tables", "events", "reports", "curated", "etl"}:
+        raise NextcloudError("Choose database, tables, events, reports, curated data or ETL output")
     requested = {normalized(cohort) for cohort in cohorts}
     requested_types = {normalized(value) for value in modalities}
     if modality:
@@ -173,6 +198,8 @@ def select_downloads(manifest, category, cohorts=(), modality=None, variable_gro
     covered, covered_pairs = set(), set()
     for entry in manifest["files"]:
         if artifact_type(entry) != category:
+            continue
+        if preprocessing and normalized(entry.get("preprocessing", "unspecified")) not in {normalized(value) for value in preprocessing}:
             continue
         matching_types = requested_types & {normalized(tag) for tag in entry["modalities"]}
         if requested_types and not matching_types:

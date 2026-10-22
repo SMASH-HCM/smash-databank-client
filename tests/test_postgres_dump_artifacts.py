@@ -48,7 +48,8 @@ def test_download_registers_and_caches_pg_dump_without_sqlite_or_psycopg(tmp_pat
     assert phases == ["validating", "complete"]
     assert workspace.state["active_db"] == downloaded["local_path"]
     assert workspace.database_available() and workspace.database_is_dump()
-    assert "PostgreSQL dump" in status_panel(workspace, 100)
+    assert "PostgreSQL dump" not in status_panel(workspace, 100)
+    assert workspace.database_available()
     assert next(item for item in actions(workspace) if item.key == "12").enabled
     assert not any(item.group == "Local OMOP" for item in actions(workspace))
     assert workspace.verify_local()[0]["status"] == "PASS"

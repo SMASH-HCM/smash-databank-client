@@ -45,7 +45,7 @@ def build(output):
     dump_guide = release / "docs/POSTGRES_DUMPS.md"
     dump_guide.parent.mkdir(exist_ok=True)
     shutil.copy2(ROOT / "docs/POSTGRES_DUMPS.md", dump_guide)
-    for filename in ("README.md", "MENU.md", "NEXTCLOUD.md", "BINARY_RELEASES.md", "UPDATES.md", "SETUP.md", "GITHUB_RELEASE.md", "TESTING.md", "ARCHITECTURE.md", "RELEASE_0.13.0.md"):
+    for filename in ("README.md", "MENU.md", "MANIFEST.md", "NEXTCLOUD.md", "BINARY_RELEASES.md", "UPDATES.md", "SETUP.md", "GITHUB_RELEASE.md", "TESTING.md", "ARCHITECTURE.md", "RELEASE_0.13.0.md", "RELEASE_0.14.0.md"):
         destination = release / "docs" / filename
         destination.parent.mkdir(exist_ok=True)
         shutil.copy2(ROOT / "docs" / filename, destination)

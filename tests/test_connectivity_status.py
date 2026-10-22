@@ -72,13 +72,13 @@ def test_panel_checks_directory_presence_and_does_not_create_it(tmp_path, omop_p
     rows = status_panel(state, 100).splitlines()
     assert "[OK]" in next(row for row in rows if "Databank:" in row)
     assert "[NO]" in next(row for row in rows if "Download location:" in row)
-    assert "[OK]" in next(row for row in rows if "SMASH-HCM OMOP database:" in row)
+    assert not any("OMOP database:" in row for row in rows)
     assert "[NO]" in next(row for row in rows if "SMASH-HCM Manifest:" in row)
     assert not missing.exists()
     missing.mkdir()
     assert "[OK]" in next(row for row in status_panel(state, 100).splitlines() if "Download location:" in row)
     omop_path.unlink()
-    assert "[NO]" in next(row for row in status_panel(state, 100).splitlines() if "SMASH-HCM OMOP database:" in row)
+    assert "OMOP database:" not in status_panel(state, 100)
 
 
 def test_authenticated_failure_does_not_override_server_reachability(tmp_path):

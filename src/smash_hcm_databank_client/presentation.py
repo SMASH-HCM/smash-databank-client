@@ -14,14 +14,6 @@ from .console import is_console_writer
 
 def status_panel(workspace, width=None):
     width = max(32, min(width or shutil.get_terminal_size((80, 24)).columns, 100))
-    database = "<unavailable>"
-    if workspace.database_available():
-        info = workspace.database_info()
-        if not info.startswith("Selected database is unavailable"):
-            version, _, filename = info.partition(" | ")
-            database = version if version != "version not recorded" else filename + " (version not recorded)"
-            if workspace.database_is_dump():
-                database += " (PostgreSQL dump)"
     try:
         catalogue = workspace.manifest()
         manifest = "schema " + catalogue["schema_version"] + " | " + catalogue["release"]
@@ -44,7 +36,6 @@ def status_panel(workspace, width=None):
         ("Databank login:", login, connection is True),
         ("Download location:", directory + (" (default)" if not workspace.state["download_root"] else ""), directory_ok),
         ("SMASH-HCM Manifest:", manifest, manifest != "<unavailable>"),
-        ("SMASH-HCM OMOP database:", database, database != "<unavailable>"),
     ]
     inner = width - 4
     label_width = min(max(len(label) for label, _, _ in rows) + 2, inner - 10)
