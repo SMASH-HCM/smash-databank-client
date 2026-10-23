@@ -2,7 +2,7 @@
 
 Download and verify approved SMASH-HCM research datasets from Nextcloud. The client is for collaborators who need ready-made **train/test CSVs, event streams, reports, and cohort ZIPs**. It does not query databases, prepare features, train models, or require PostgreSQL on the collaborator's computer.
 
-**[Download the client](https://github.com/SMASH-HCM/smash-hcm-databank-client/releases)** Â· **[Request data access](https://forms.gle/nNDDBbX8ah15dNcs8)** Â· **[User guide](docs/MENU.md)**
+**[Download the client](https://github.com/SMASH-HCM/smash-hcm-databank-client/releases)** · **[Request data access](https://forms.gle/nNDDBbX8ah15dNcs8)** · **[User guide](docs/MENU.md)**
 
 ## Get started
 
